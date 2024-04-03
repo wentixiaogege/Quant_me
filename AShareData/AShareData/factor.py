@@ -358,7 +358,8 @@ class Factor(FactorBase):
 
     # helper functions
     def _check_args(self, table_name: str, factor_name: str):
-        table_name = table_name.lower()
+        # table_name = table_name.lower()
+        table_name = table_name
 
         if not self.db_interface.exist_table(table_name):
             raise ValueError(f'数据库中无名为 {table_name} 的表')

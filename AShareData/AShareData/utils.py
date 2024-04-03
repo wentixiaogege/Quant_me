@@ -7,6 +7,7 @@ from importlib.resources import open_text, read_binary
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
+import numpy as np
 
 from . import constants
 
@@ -161,9 +162,11 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
 
     def __post_init__(self):
         if self.ignore_new_stock_period:
-            self.ignore_new_stock_period = int(self.ignore_new_stock_period)
+            # self.ignore_new_stock_period = int(self.ignore_new_stock_period)
+            self.ignore_new_stock_period = int(244 if np.isnan(self.select_new_stock_period) else self.select_new_stock_period )
         if self.select_new_stock_period:
-            self.select_new_stock_period = int(self.select_new_stock_period)
+            # self.select_new_stock_period = int(self.select_new_stock_period)
+            self.select_new_stock_period = int(244 if np.isnan(self.select_new_stock_period) else self.select_new_stock_period )
         if self.industry_provider:
             if self.industry_provider not in constants.INDUSTRY_DATA_PROVIDER:
                 raise ValueError('非法行业分类机构!')

@@ -4,7 +4,7 @@
 		"更新时间": "date"
 	},
 	"交易日历": {
-		"index": "int",
+		"index": "bigint",
 		"交易日期": "datetime"
 	},
 	"Shibor利率数据": {
@@ -18,7 +18,6 @@
 		"9个月": "float",
 		"1年": "float"
 	},
-
 	"上市公司基本信息": {
 		"ID": "varchar",
 		"交易所代码": "str",
@@ -33,7 +32,7 @@
 		"公司主页": "str",
 		"电子邮件": "str",
 		"办公室": "str",
-		"员工人数": "int",
+		"员工人数": "bigint",
 		"主要业务及产品": "str",
 		"经营范围": "str"
 	},
@@ -72,6 +71,16 @@
 		"ID": "varchar",
 		"总股本": "double"
 	},
+	"流通股本": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"流通股本": "double"
+	},
+	"自由流通股本": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"自由流通股本": "double"
+	},
 	"A股总股本": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -81,11 +90,6 @@
 		"DateTime": "date",
 		"ID": "varchar",
 		"A股流通股本": "double"
-	},
-	"自由流通股本": {
-		"DateTime": "date",
-		"ID": "varchar",
-		"自由流通股本": "double"
 	},
 	"分红送股": {
 		"DateTime": "date",
@@ -160,7 +164,6 @@
 		"成交量": "float",
 		"成交额": "double"
 	},
-
 	"申万一级行业": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -186,7 +189,6 @@
 		"ID": "varchar",
 		"中证行业": "str"
 	},
-
 	"资产负债表": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -534,7 +536,6 @@
 		"y3": "date",
 		"y5": "date"
 	},
-
 	"沪深股通成份股": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -543,9 +544,8 @@
 	"沪深港股通持股明细": {
 		"DateTime": "date",
 		"ID": "varchar",
-		"持股数量": "int"
+		"持股数量": "bigint"
 	},
-
 	"指数日行情": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -570,13 +570,12 @@
 		"ConstituteTicker": "varchar",
 		"权重": "float"
 	},
-
 	"期货合约": {
 		"ID": "varchar",
 		"合约代码": "varchar",
 		"证券名称": "varchar",
 		"产品代码": "varchar",
-		"合约乘数": "int",
+		"合约乘数": "bigint",
 		"最小报价单位": "float",
 		"上市日期": "date",
 		"最后交易日": "date",
@@ -595,7 +594,6 @@
 		"成交额": "double",
 		"持仓量": "double"
 	},
-
 	"期权合约": {
 		"ID": "varchar",
 		"证券名称": "str",
@@ -628,7 +626,6 @@
 		"Theta": "float",
 		"Rho": "float"
 	},
-
 	"可转债列表": {
 		"ID": "varchar",
 		"转债名称": "str",
@@ -640,7 +637,7 @@
 		"发行总额": "float",
 		"起息日期": "date",
 		"到期日期": "date",
-		"年付息次数": "int",
+		"年付息次数": "bigint",
 		"上市日期": "date",
 		"摘牌日": "date",
 		"转股起始日": "date",
@@ -674,7 +671,6 @@
 		"ID": "varchar",
 		"可转债转股价": "float"
 	},
-
 	"基金列表": {
 		"ID": "varchar",
 		"证券名称": "str",
@@ -687,8 +683,8 @@
 		"债券型": "boolean",
 		"ETF": "boolean",
 		"定开": "boolean",
-        "定开时长(月)": "int",
-		"封闭运作转LOF时长(月)": "int",
+        "定开时长(月)": "bigint",
+		"封闭运作转LOF时长(月)": "bigint",
 		"管理费率": "float",
         "浮动管理费": "boolean",
 		"浮动管理费说明": "str",
@@ -698,7 +694,7 @@
 		"后端申购费": "str",
 		"最高申购费": "float",
 		"赎回费": "str",
-		"免赎回费持有期(日)": "int"
+		"免赎回费持有期(日)": "bigint"
 	},
 	"基金时间表": {
 		"ID": "varchar",
@@ -748,9 +744,8 @@
 		"占股票市值比": "float",
 		"占流通股本比例": "float"
 	},
-
 	"港股交易日历": {
-		"index": "int",
+		"index": "bigint",
 		"交易日期": "datetime"
 	},
 	"港股日行情": {
@@ -763,7 +758,6 @@
 		"成交量": "float",
 		"成交额": "double"
 	},
-
 	"美股日行情": {
 		"DateTime": "date",
 		"ID": "varchar",
@@ -778,40 +772,38 @@
 		"PE": "float",
 		"PB": "float"
 	},
-
 	"持仓记录": {
-		"id": "int",
+		"id": "bigint",
 		"accountName": "str",
 		"DateTime": "datetime",
-		"tickerNum": "int",
+		"tickerNum": "bigint",
 		"windCode": "varchar",
 		"name": "varchar",
-		"quantity": "int"
+		"quantity": "bigint"
 	},
 	"交易记录": {
-		"id": "int",
+		"id": "bigint",
 		"accountName": "str",
 		"DateTime": "datetime",
-		"tickerNum": "int",
+		"tickerNum": "bigint",
 		"windCode": "varchar",
 		"name": "varchar",
 		"tradeDirection": "varchar",
-		"tradeVolume": "int",
+		"tradeVolume": "bigint",
 		"tradePrice": "float"
 	},
 	"委托记录": {
-		"id": "int",
+		"id": "bigint",
 		"accountName": "str",
 		"DateTime": "datetime",
-		"tickerNum": "int",
+		"tickerNum": "bigint",
 		"name": "varchar",
 		"tradeDirection": "varchar",
-		"tradeVolume": "int",
-		"orderVolume": "int",
+		"tradeVolume": "bigint",
+		"orderVolume": "bigint",
 		"orderPrice": "float",
 		"orderStatus": "varchar"
 	},
-
 	"负净资产股票": {
 		"DateTime": "datetime",
 		"ID": "varchar",
@@ -820,7 +812,7 @@
 	"一字涨跌停": {
 		"DateTime": "date",
 		"ID": "varchar",
-		"涨跌停": "int"
+		"涨跌停": "bigint"
 	},
 	"因子分组收益率": {
 		"DateTime": "date",
@@ -841,5 +833,10 @@
 		"自由流通市值": "double",
 		"市盈率TTM": "float",
 		"市净率": "float"
+	},
+	"自合成指数": {
+		"DateTime": "date",
+		"ID": "varchar",
+		"收益率": "float"
 	}
 }

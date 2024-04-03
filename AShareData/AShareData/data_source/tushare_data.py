@@ -49,6 +49,7 @@ class TushareData(DataSource):
         self.token = tushare_token
         self._pro = None
         self._factor_param = utils.load_param('tushare_param.json', param_json_loc)
+        self.calendar = date_utils.SHSZTradingCalendar(self.db_interface)
 
     def login(self):
         self._pro = ts.pro_api(self.token)
@@ -73,6 +74,7 @@ class TushareData(DataSource):
         # self.update_fund_list_date()
         self.update_future_list_date()
         self.update_option_list_date()
+        self.calendar = date_utils.SHSZTradingCalendar(self.db_interface)
 
     #######################################
     # init func
@@ -427,6 +429,22 @@ class TushareData(DataSource):
         logging.getLogger(__name__).debug(f'{ticker if ticker else ""}{data_category}下载完成.')
         return df
 
+    def update_hq_daily(self):
+        table_name = '股票日行情'
+        start_date = self.db_interface.get_latest_timestamp(table_name, START_DATE['index_daily'])
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
+
+        rate = self._factor_param[table_name]['每分钟限速']
+        rate_limiter = RateLimiter(rate, period=60)
+
+        logging.getLogger(__name__).debug(f'开始下载{table_name}.')
+        with tqdm(dates) as pbar:
+            for date in dates:
+                with rate_limiter:
+                    pbar.set_description(f'下载{date}的{table_name}')
+                    self.get_daily_hq(date)
+                    pbar.update()
+        logging.getLogger(__name__).info(f'{table_name}下载完成')
     def get_daily_hq(self, trade_date: date_utils.DateType = None,
                      start_date: date_utils.DateType = None, end_date: date_utils.DateType = None) -> None:
         """更新每日行情
@@ -465,33 +483,33 @@ class TushareData(DataSource):
                     'float_share': get_pre_data('流通股本'),
                     'free_share': get_pre_data('自由流通股本')}
 
-        with tqdm(dates) as pbar:
-            for date in dates:
-                current_date_str = date_utils.date_type2str(date)
-                pbar.set_description(f'下载{current_date_str}的日行情')
+        # with tqdm(dates) as pbar:
+        for date in dates:
+            current_date_str = date_utils.date_type2str(date)
+            # pbar.set_description(f'下载{current_date_str}的日行情')
 
-                # price data
-                df = self._pro.daily(trade_date=current_date_str, fields=price_fields)
-                df['vol'] = df['vol'] * 100
-                df['amount'] = df['amount'] * 1000
-                price_df = self._standardize_df(df, price_desc)
-                self.db_interface.update_df(price_df, '股票日行情')
+            # price data
+            df = self._pro.daily(trade_date=current_date_str, fields=price_fields)
+            df['vol'] = df['vol'] * 100
+            df['amount'] = df['amount'] * 1000
+            price_df = self._standardize_df(df, price_desc)
+            self.db_interface.update_df(price_df, '股票日行情')
 
-                # adj_factor data
-                df = self._pro.adj_factor(trade_date=current_date_str)
-                adj_df = self._standardize_df(df, adj_factor_desc)
-                self.db_interface.update_compact_df(adj_df, '复权因子', pre_adj_factor)
-                pre_adj_factor = adj_df
+            # adj_factor data
+            df = self._pro.adj_factor(trade_date=current_date_str)
+            adj_df = self._standardize_df(df, adj_factor_desc)
+            self.db_interface.update_compact_df(adj_df, '复权因子', pre_adj_factor)
+            pre_adj_factor = adj_df
 
-                # indicator data
-                df = self._pro.daily_basic(trade_date=current_date_str, fields=indicator_fields)
-                df = self._standardize_df(df, indicator_desc).multiply(10000)
-                for key, value in pre_dict.items():
-                    col_name = indicator_desc[key]
-                    self.db_interface.update_compact_df(df[col_name], col_name, value)
-                    pre_dict[key] = df[col_name]
+            # indicator data
+            df = self._pro.daily_basic(trade_date=current_date_str, fields=indicator_fields)
+            df = self._standardize_df(df, indicator_desc).multiply(10000)
+            for key, value in pre_dict.items():
+                col_name = indicator_desc[key]
+                self.db_interface.update_compact_df(df[col_name], col_name, value)
+                pre_dict[key] = df[col_name]
 
-                pbar.update()
+                # pbar.update()
 
     def update_pause_stock_info(self):
         """更新股票停牌信息"""
@@ -597,7 +615,9 @@ class TushareData(DataSource):
             self.db_interface.delete_id_records(table_name, ticker)
             try:
                 self.db_interface.insert_df(df, table_name)
-            except:
+            except Exception as e :
+                print(e)
+                print(f'{ticker} - {table_name} failed to get coherent data')
                 logging.getLogger(__name__).error(f'{ticker} - {table_name} failed to get coherent data')
 
         loop_vars = [(self._pro.income, income_desc, income),
@@ -630,8 +650,7 @@ class TushareData(DataSource):
         desc = self._factor_param[table_name]['输出参数']
         ref_table = '合并资产负债表'
         db_data = self.db_interface.read_table(ref_table, '期末总股本')
-        latest = db_data.groupby('ID').tail(1).reset_index().loc[:, ['DateTime', 'ID']].rename({'ID': 'ts_code'},
-                                                                                               axis=1)
+        latest = db_data.groupby('ID').tail(1).reset_index().loc[:, ['DateTime', 'ID']].rename({'ID': 'ts_code'},axis=1)
         update_tickers = set(self.stock_tickers.all_ticker()) - set(latest.ts_code.tolist())
 
         report_dates = date_utils.ReportingDate.get_latest_report_date(date)
@@ -877,8 +896,10 @@ class TushareData(DataSource):
                     daily_data['amount'] = daily_data['amount'] * 1000
                     daily_data = self._standardize_df(daily_data, daily_params)
 
-                    ex_nav_data = self._pro.fund_nav(end_date=date_str, market='E')
-                    ex_nav_part = ex_nav_data.loc[:, ['ts_code', 'end_date', 'unit_nav']]
+                    # ex_nav_data = self._pro.fund_nav(nav_date=date_str,end_date=date_str, market='E')
+                    ex_nav_data = self._pro.fund_nav(nav_date=date_str,end_date=date_str, market='E')
+                    # ex_nav_part = ex_nav_data.loc[:, ['ts_code', 'end_date', 'unit_nav']]
+                    ex_nav_part = ex_nav_data.loc[:, ['ts_code', 'nav_date', 'unit_nav']]
                     ex_nav_part = self._standardize_df(ex_nav_part, nav_params)
 
                     share_data = self._pro.fund_share(trade_date=date_str)
@@ -891,7 +912,8 @@ class TushareData(DataSource):
 
                     db_data = daily_data.join(ex_nav_part, how='left').join(ex_share_data, how='left')
 
-                    nav_data = self._pro.fund_nav(end_date=date_str, market='O', fields=list(nav_params.keys()))
+                    # nav_data = self._pro.fund_nav(end_date=date_str, market='O', fields=list(nav_params.keys()))
+                    nav_data = self._pro.fund_nav(nav_date=date_str, market='O', fields=list(nav_params.keys()))
                     nav_data = nav_data.loc[~(pd.isna(nav_data['accum_nav']) & nav_data['unit_nav'] == 1), :].drop(
                         'accum_nav', axis=1)
                     nav_part = self._standardize_df(nav_data.iloc[:, :3].copy(), nav_params)

@@ -45,8 +45,7 @@ class IndexCompositor(FactorCompositor):
         """ 更新市场收益率 """
         price_table = '股票日行情'
 
-        start_date = self.db_interface.get_latest_timestamp(self.table_name, self.policy.start_date,
-                                                            column_condition=('ID', self.policy.ticker))
+        start_date = self.db_interface.get_latest_timestamp(self.table_name, self.policy.start_date,column_condition=('ID', self.policy.ticker))
         end_date = self.db_interface.get_latest_timestamp(price_table)
         dates = self.calendar.select_dates(start_date, end_date, inclusive=(False, True))
 
@@ -80,6 +79,7 @@ class IndexUpdater(object):
         records = utils.load_excel('自编指数配置.xlsx', config_loc)
         self.policies = {}
         for record in records:
+            print(record)
             self.policies[record['name']] = utils.StockIndexCompositionPolicy.from_dict(record)
 
     def update(self):
@@ -107,11 +107,12 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
         self.paused_stock_selector = StockTickerSelector(stock_selection_policy, db_interface)
 
     def update(self):
-        price_table_name = '股票日行情'
-
-        start_date = self.db_interface.get_latest_timestamp(self.table_name, dt.date(1999, 5, 4))
+        price_table_name = '股票日行情'#日线行情
+        # price_table_name = '日线行情'
+        # start_date = self.db_interface.get_latest_timestamp(self.table_name, dt.date(1999, 5, 4))
+        start_date = self.db_interface.get_latest_timestamp(self.table_name, dt.date(2008, 1, 3))
         end_date = self.db_interface.get_latest_timestamp(price_table_name, dt.date(1990, 12, 10))
-
+        print('ljj debugging ',start_date,end_date)
         pre_data = self.db_interface.read_table(price_table_name, ['最高价', '最低价'], dates=start_date)
         dates = self.calendar.select_dates(start_date, end_date)
         pre_date = dates[0]
@@ -125,11 +126,9 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
                 if no_price_move_tickers:
                     target_stocks = list(set(no_price_move_tickers) - set(self.paused_stock_selector.ticker(date)))
                     if target_stocks:
-                        adj_factor = self.data_reader.adj_factor.get_data(start_date=pre_date, end_date=date,
-                                                                          ids=target_stocks)
+                        adj_factor = self.data_reader.adj_factor.get_data(start_date=pre_date, end_date=date,ids=target_stocks)
                         price = data.loc[(slice(None), target_stocks), '最高价'] * adj_factor.loc[(date, target_stocks)]
-                        pre_price = pre_data.loc[(slice(None), target_stocks), '最高价'] * adj_factor.loc[
-                            (pre_date, target_stocks)]
+                        pre_price = pre_data.loc[(slice(None), target_stocks), '最高价'] * adj_factor.loc[(pre_date, target_stocks)]
                         diff_price = pd.concat([pre_price, price]).unstack().diff().iloc[1, :].dropna()
                         diff_price = diff_price.loc[diff_price != 0]
                         if diff_price.shape[0] > 1:
@@ -220,11 +219,11 @@ class NegativeBookEquityListingCompositor(FactorCompositor):
                 t2 = t[np.concatenate(([True], t.values[:-1] != t.values[1:]))]
                 if any(t2):
                     storage.append(t2)
-
-        ret = pd.concat(storage)
-        ret.name = '负净资产股票'
-        self.db_interface.purge_table(self.table_name)
-        self.db_interface.insert_df(ret, self.table_name)
+        if len(storage) >0: ####  无负债就不高啊
+            ret = pd.concat(storage)
+            ret.name = '负净资产股票'
+            self.db_interface.purge_table(self.table_name)
+            self.db_interface.insert_df(ret, self.table_name)
 
 
 class MarketSummaryCompositor(FactorCompositor):
@@ -235,7 +234,8 @@ class MarketSummaryCompositor(FactorCompositor):
         """
         super().__init__(db_interface)
         self.table_name = '市场汇总'
-        self.init_date = dt.datetime(2001, 1, 1)
+        # self.init_date = dt.datetime(2001, 1, 1)
+        self.init_date = dt.datetime(2008, 1, 3)
         records = utils.load_excel('自编指数配置.xlsx')
         policies = {}
         for record in records:
@@ -244,8 +244,10 @@ class MarketSummaryCompositor(FactorCompositor):
         self.ticker = stock_selection_policy.ticker
         self.stock_ticker_selector = StockTickerSelector(stock_selection_policy.stock_selection_policy,
                                                          self.db_interface)
-        self.total_share = CompactFactor('A股总股本', self.db_interface)
-        self.float_share = CompactFactor('A股流通股本', self.db_interface)
+        # self.total_share = CompactFactor('A股总股本', self.db_interface) ### wind数据不可用
+        # self.float_share = CompactFactor('A股流通股本', self.db_interface)### wind数据不可用
+        self.total_share = CompactFactor('总股本', self.db_interface)
+        self.float_share = CompactFactor('流通股本', self.db_interface)
         self.free_float_share = CompactFactor('自由流通股本', self.db_interface)
 
     def update(self):

@@ -59,6 +59,7 @@ class TDXData(DataSource, MinutesDataFunctionMixin):
         cb_tickers = ConvertibleBondTickers(self.db_interface)
 
         db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(1998, 9, 2))
+        # db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2022, 9, 2))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
         end_date = dt.datetime.today()
         dates = self.calendar.select_dates(start_date, end_date)

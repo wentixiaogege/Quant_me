@@ -255,7 +255,7 @@
 		},
 		"输出参数": {
 			"ts_code": "ID",
-			"end_date": "DateTime",
+			"nav_date": "DateTime",
 			"unit_nav": "单位净值",
 			"accum_nav": "累计净值",
 			"net_asset": "资产净值",
@@ -1987,7 +1987,7 @@
 			"vol": "成交量",
 			"amount": "成交额"
 		},
-		"每分钟限速": 300
+		"每分钟限速": 70
 	},
 	"指数成分和权重": {
 		"输入参数": {
@@ -2002,6 +2002,23 @@
 			"trade_date": "DateTime",
 			"weight": "权重"
 		}
+	},
+	"股票日行情": {
+		"输入参数": {
+			"ts_code": "ID",
+			"trade_date": "DateTime",
+			"start_date": "开始日期",
+			"end_date": "结束日期"
+		},
+		"输出参数": {
+			"open": "开盘价",
+			"high": "最高价",
+			"low": "最低价",
+			"close": "收盘价",
+			"vol": "成交量",
+			"amount": "成交额"
+		},
+		"每分钟限速": 490
 	},
 	"可转债基本信息": {
 		"输入参数": {

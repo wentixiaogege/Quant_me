@@ -3,7 +3,7 @@ import pandas as pd
 import AShareData as asd
 
 if __name__ == '__main__':
-    config_loc = './config.json'
+    config_loc = '../config.json'
     asd.set_global_config(config_loc)
 
     data_reader = asd.AShareDataReader()

@@ -6,7 +6,7 @@ from typing import List, Mapping, Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
-from sqlalchemy import Boolean, Column, Date, DateTime, extract, Float, Integer, Table, Text, VARCHAR
+from sqlalchemy import Boolean, Column, Date, DateTime, extract, Float, Integer, BIGINT,Table, Text, VARCHAR
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func, text
@@ -104,6 +104,7 @@ class MySQLInterface(DBInterface):
         'double': DOUBLE,
         'str': Text,
         'int': Integer,
+        'bigint': BIGINT,
         'varchar': VARCHAR(20),
         'boolean': Boolean
     }
@@ -136,7 +137,7 @@ class MySQLInterface(DBInterface):
             tmp_item['y2'] = 'date'
             tmp_item['y3'] = 'date'
             tmp_item['y5'] = 'date'
-            for prefix in ['合并', '母公司']:
+            for prefix in ['合并', '母公司']: ### 这里加了合并资产负债表
                 self._db_parameters[prefix + special_item] = tmp_item
         for table_name, table_schema in self._db_parameters.items():
             self.create_table(table_name, table_schema)
@@ -159,13 +160,18 @@ class MySQLInterface(DBInterface):
         col_types = [self._type_mapper[it] for it in table_schema.values()]
         if 'id' in col_names:
             primary_keys = ['id']
+        elif '分红送股' == table_name: ### 会报错
+            primary_keys = [it for it in ['ID', '报告期', 'ConstituteTicker'] if it in col_names]
         else:
-            primary_keys = [it for it in ['DateTime', 'ID', '报告期', 'ConstituteTicker'] if it in col_names]
+            primary_keys = [it for it in ['DateTime','ID', '报告期', 'ConstituteTicker'] if it in col_names]
         index = [] if len(primary_keys) <= 1 else primary_keys[1:]
 
-        existing_tables = [it.lower() for it in self.meta.tables]
-        if table_name.lower() in existing_tables:
+        # existing_tables = [it.lower() for it in self.meta.tables]
+        existing_tables = [it for it in self.meta.tables]
+        # if table_name.lower() in existing_tables:
+        if table_name in existing_tables:
             logging.getLogger(__name__).debug(f'表 {table_name} 已存在.')
+            print(f'表 {table_name} 已存在.')
             return
 
         new_table = Table(table_name, self.meta,
@@ -195,8 +201,9 @@ class MySQLInterface(DBInterface):
             return
 
         start_timestamp = time.time()
-        # df.to_sql(table_name.lower(), self.engine, if_exists='append')
-        df.to_sql(table_name.lower(), self.engine, if_exists='replace')
+        df.to_sql(table_name, self.engine, if_exists='append')
+        # df.to_sql(table_name.lower(), self.engine, if_exists='replace')
+        # df.to_sql(table_name, self.engine, if_exists='replace')
         end_timestamp = time.time()
         logging.getLogger(__name__).debug(f'插入数据耗时 {(end_timestamp - start_timestamp):.2f} 秒.')
 
@@ -209,7 +216,11 @@ class MySQLInterface(DBInterface):
 
         metadata = sa.MetaData()
         metadata.reflect(bind=self.engine)
-        table = metadata.tables[table_name.lower()]
+        try:
+            # table = metadata.tables[table_name.lower()]
+            table = metadata.tables[table_name]
+        except:
+            table = metadata.tables[table_name]
         flat_df = df.reset_index()
 
         date_cols = flat_df.select_dtypes(np.datetime64).columns.values.tolist()
@@ -219,12 +230,14 @@ class MySQLInterface(DBInterface):
         # replace nan to None so that insert will not error out
         # it seems that this operation changes dtypes. so do it last
         start_timestamp = time.time()
-        for col in flat_df.columns:
-            flat_df[col] = flat_df[col].where(flat_df[col].notnull(), other=None)
-            # flat_df[col] = flat_df[col].fillna(None)
-            flat_df[col] = flat_df[col].replace(np.nan, None)
+        import math
+        # for col in flat_df.columns:
+        #     flat_df[col] = flat_df[col].where(flat_df[col].notnull(), other=None)
+        #     flat_df[col] = flat_df[col].apply(lambda x: np.nan if pd.isna(x) else x)
+        #     flat_df[col] = flat_df[col].replace(np.nan, None)
+        flat_df = flat_df.astype(object).where(pd.notnull(flat_df), None)
 
-        flat_df = flat_df.where(flat_df.notnull(), None)
+        # flat_df = flat_df.where(flat_df.notnull(), None)
         for _, row in flat_df.iterrows():
             insert_statement = insert(table).values(**row.to_dict())
             statement = insert_statement.on_duplicate_key_update(**row.to_dict())
@@ -255,10 +268,12 @@ class MySQLInterface(DBInterface):
         :param column_condition: 列条件Tuple: (列名, 符合条件的列内容)
         :return: 最新时间
         """
-        table_name = table_name.lower()
+        # table_name = table_name.lower()
+        table_name = table_name
         if table_name not in self.meta.tables.keys():
             raise ValueError(f'数据库中无名为 {table_name} 的表')
-        table = self.meta.tables[table_name.lower()]
+        # table = self.meta.tables[table_name.lower()]
+        table = self.meta.tables[table_name]
         if 'DateTime' in table.columns.keys():
             session = Session(self.engine)
             q = session.query(func.max(table.c.DateTime))
@@ -282,7 +297,8 @@ class MySQLInterface(DBInterface):
         """
         if table_name not in self.meta.tables.keys():
             raise ValueError(f'数据库中无名为 {table_name} 的表')
-        table = self.meta.tables[table_name.lower()]
+        # table = self.meta.tables[table_name.lower()]
+        table = self.meta.tables[table_name]
         if 'DateTime' in table.columns.keys():
             session = Session(self.engine)
             q = session.query(func.min(table.c[column]))
@@ -300,7 +316,8 @@ class MySQLInterface(DBInterface):
         """
         if table_name not in self.meta.tables.keys():
             raise ValueError(f'数据库中无名为 {table_name} 的表')
-        table = self.meta.tables[table_name.lower()]
+        # table = self.meta.tables[table_name.lower()]
+        table = self.meta.tables[table_name]
         if 'DateTime' in table.columns.keys():
             session = Session(self.engine)
             q = session.query(func.max(table.c[column]))
@@ -327,7 +344,8 @@ class MySQLInterface(DBInterface):
         """
         if table_name not in self.meta.tables.keys():
             raise ValueError(f'数据库中无名为 {table_name} 的表')
-        table = self.meta.tables[table_name.lower()]
+        # table = self.meta.tables[table_name.lower()]
+        table = self.meta.tables[table_name]
         if column_name in table.columns.keys():
             logging.getLogger(__name__).debug(f'{table_name} 表中找到 {column_name} 列')
             session = Session(self.engine)
@@ -371,7 +389,8 @@ class MySQLInterface(DBInterface):
         :param text_statement: SQL指令
         :return:
         """
-        table_name = table_name.lower()
+        # table_name = table_name.lower()
+        table_name = table_name
         index_col = self.get_table_primary_keys(table_name)
 
         session = Session(self.engine)
@@ -380,7 +399,8 @@ class MySQLInterface(DBInterface):
         if columns:
             if isinstance(columns, str):
                 columns = [columns]
-            columns.extend(index_col)
+            if index_col is not None:
+                columns.extend(index_col)
         else:
             columns = [it.name for it in t.columns]
         for it in columns:
@@ -423,25 +443,39 @@ class MySQLInterface(DBInterface):
 
     def exist_table(self, table_name: str) -> bool:
         """ 数据库中是否存在该表"""
-        table_name = table_name.lower()
+        # table_name = table_name.lower()
+        table_name = table_name
         return table_name in self.meta.tables.keys()
 
-    def get_table_primary_keys(self, table_name: str) -> Optional[List[str]]:
-        table_name = table_name.lower()
+    # def get_table_primary_keys(self, table_name: str) -> Optional[List[str]]:
+    #     table_name = table_name.lower()
+    #     table = self.meta.tables[table_name]
+    #     primary_key = [it.name for it in table.primary_key]
+    #     if primary_key:
+    #         return primary_key
+    def get_table_primary_keys(self,table_name:str)-> Optional[List[str]]:
+        # table_name = table_name.lower()
         table = self.meta.tables[table_name]
-        primary_key = [it.name for it in table.primary_key]
-        if primary_key:
-            return primary_key
+        col_names = table.columns.keys()
+        primary_keys=[]
+        if 'id' in col_names:
+            primary_keys = ['id']
+        elif '分红送股' == table_name: ### 会报错
+            primary_keys = [it for it in ['ID', '报告期', 'ConstituteTicker'] if it in col_names]
+        else:
+            primary_keys = [it for it in ['DateTime','ID', '报告期', 'ConstituteTicker'] if it in col_names]
 
+        if primary_keys:
+            return primary_keys
     def delete_datetime_records(self, table_name: str, datetime: dt.datetime):
-        table_name = table_name.lower()
+        # table_name = table_name.lower()
         t = self.meta.tables[table_name]
         stmt = t.delete().where(t.c.DateTime == datetime)
         conn = self.engine.connect()
         conn.execute(stmt)
 
     def delete_id_records(self, table_name: str, tickers: Union[str, Sequence[str]]):
-        table_name = table_name.lower()
+        # table_name = table_name.lower()
         t = self.meta.tables[table_name]
         if isinstance(tickers, str):
             stmt = t.delete().where(t.c.ID == tickers)
@@ -471,6 +505,7 @@ def compute_diff(input_data: pd.Series, db_data: pd.Series) -> Optional[pd.Serie
 
     db_data = db_data.groupby('ID').tail(1)
     combined_data = pd.concat([db_data.droplevel('DateTime'), input_data.droplevel('DateTime')], axis=1, sort=True)
+    combined_data = combined_data.loc[input_data.droplevel('DateTime').index.to_list()] ### make same length
     stocks = combined_data.iloc[:, 0] != combined_data.iloc[:, 1]
     return input_data.loc[slice(None), stocks, :]
 

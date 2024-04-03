@@ -30,7 +30,8 @@ class UMDCompositor(ModelFactorCompositor):
         super().__init__(model, db_interface)
         self.factor_names = ['Carhart_UMD']
 
-        self.start_date = dt.datetime(2007, 1, 4)
+        # self.start_date = dt.datetime(2007, 1, 4)
+        self.start_date = dt.datetime(2008, 1, 3)
         self.ticker_selector = StockTickerSelector(model.stock_selection_policy, self.db_interface)
 
         self.cap = self.data_reader.stock_free_floating_market_cap

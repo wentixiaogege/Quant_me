@@ -79,6 +79,8 @@ class JQData(DataSource, MinutesDataFunctionMixin):
         diff_columns = ['成交量', '成交额']
         tickers = self.stock_tickers.ticker(date)
         tickers = [self.windcode2jqcode(it) for it in tickers]
+        ##### 新加，测试账号没有BJ的数据
+        # tickers = [i for i in tickers if 'BJ' not in i ]
 
         auction_time = date + dt.timedelta(hours=9, minutes=25)
         auction_data = self.db_interface.read_table('股票集合竞价数据', columns=['成交价', '成交量', '成交额'], dates=auction_time)
@@ -103,6 +105,8 @@ class JQData(DataSource, MinutesDataFunctionMixin):
         renaming_dict = self._factor_param['行情数据']
         tickers = self.stock_tickers.ticker(date)
         tickers = [self.windcode2jqcode(it) for it in tickers]
+        ##### 新加，测试账号没有BJ的数据
+        # tickers = [i for i in tickers if 'BJ' not in i ]
 
         t0932 = date + dt.timedelta(hours=9, minutes=32)
         t1458 = date + dt.timedelta(hours=14, minutes=58)
@@ -152,6 +156,7 @@ class JQData(DataSource, MinutesDataFunctionMixin):
         """更新早盘集合竞价数据"""
         table_name = '股票集合竞价数据'
         db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2015, 1, 1))
+        # db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2022, 12, 23))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
         end_date = dt.datetime.today()
         dates = self.calendar.select_dates(start_date, end_date)
@@ -169,6 +174,8 @@ class JQData(DataSource, MinutesDataFunctionMixin):
         date_str = date_utils.date_type2str(date, '-')
         tickers = self.stock_tickers.ticker(date)
         tickers = [self.windcode2jqcode(it) for it in tickers]
+        ##### 新加，测试账号没有BJ的数据
+        # tickers = [i for i in tickers if 'BJ' not in i ]
         data = jq.get_call_auction(tickers, start_date=date_str, end_date=date_str)
         auction_time = dt.datetime.combine(date.date(), dt.time(hour=9, minute=25))
         data.time = auction_time
@@ -181,6 +188,8 @@ class JQData(DataSource, MinutesDataFunctionMixin):
         renaming_dict = self._factor_param['行情数据']
         tickers = self.stock_tickers.ticker(date)
         tickers = [self.windcode2jqcode(it) for it in tickers]
+        ##### 新加，测试账号没有BJ的数据
+        # tickers = [i for i in tickers if 'BJ' not in i ]
 
         data = jq.get_price(tickers, start_date=date, end_date=date, frequency='daily', fq=None, fill_paused=True)
         db_data = self._standardize_df(data, renaming_dict)
@@ -199,6 +208,8 @@ class JQData(DataSource, MinutesDataFunctionMixin):
         renaming_dict = self._factor_param['行情数据']
         tickers = self.future_tickers.ticker(date)
         tickers = [self.windcode2jqcode(it) for it in tickers]
+        ##### 新加，测试账号没有BJ的数据
+        # tickers = [i for i in tickers if 'BJ' not in i ]
 
         data = jq.get_price(tickers, start_date=date, end_date=date, frequency='daily', fq=None, fill_paused=True,
                             fields=['open', 'high', 'low', 'close', 'volume', 'money', 'open_interest'])
@@ -222,6 +233,8 @@ class JQData(DataSource, MinutesDataFunctionMixin):
         # table_name = '期货结算参数'
         tickers = self.future_tickers.ticker(date)
         tickers = [self.windcode2jqcode(it) for it in tickers]
+        ##### 新加，测试账号没有BJ的数据
+        # tickers = [i for i in tickers if 'BJ' not in i ]
 
         data = jq.get_extras('futures_sett_price', tickers, start_date=date, end_date=date)
         data.columns = [self.jqcode2windcode(it) for it in data.columns]
@@ -235,6 +248,8 @@ class JQData(DataSource, MinutesDataFunctionMixin):
         renaming_dict = self._factor_param['行情数据']
         tickers = self.stock_index_option_tickers.ticker(date) + self.stock_etf_option_tickers.ticker(date)
         tickers = [self.windcode2jqcode(it) for it in tickers]
+        ##### 新加，测试账号没有BJ的数据
+        # tickers = [i for i in tickers if 'BJ' not in i ]
 
         data = jq.get_price(tickers, start_date=date, end_date=date, frequency='daily', fq=None, fill_paused=True,
                             fields=['open', 'high', 'low', 'close', 'volume', 'money', 'open_interest'])

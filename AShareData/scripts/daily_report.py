@@ -1,14 +1,14 @@
 import datetime as dt
 import sys
-
 import pandas as pd
-
+pd.set_option('precision', 2)
 import AShareData as asd
 
 if __name__ == '__main__':
-    pd.set_option('precision', 2)
 
-    asd.set_global_config(sys.argv[1])
+    config_loc = '../config.json'
+    asd.set_global_config(config_loc)
+    # asd.set_global_config(sys.argv[1])
     db_interface = asd.get_db_interface()
     pre_date = dt.datetime.combine(dt.date.today(), dt.time()) - dt.timedelta(days=7)
 
