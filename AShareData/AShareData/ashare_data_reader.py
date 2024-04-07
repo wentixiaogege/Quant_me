@@ -202,10 +202,11 @@ class AShareDataReader(object):
         """可转债收盘价"""
         return ContinuousFactor('可转债日行情', '收盘价', self.db_interface)
 
-    @cached_property
-    def cb_total_val(self) -> ContinuousFactor:
-        """可转债未转股余额"""
-        return ContinuousFactor('可转债日行情', '未转股余额', self.db_interface)
+    ## 换成tushare的就没这个字段了
+    # @cached_property
+    # def cb_total_val(self) -> ContinuousFactor:
+    #     """可转债未转股余额"""
+    #     return ContinuousFactor('可转债日行情', '未转股余额', self.db_interface)
 
     @cached_property
     def cb_convert_price(self) -> CompactFactor:

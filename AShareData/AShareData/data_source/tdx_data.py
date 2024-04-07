@@ -36,7 +36,8 @@ class TDXData(DataSource, MinutesDataFunctionMixin):
     def update_stock_minute(self):
         """更新股票分钟行情"""
         table_name = '股票分钟行情'
-        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2015, 1, 1))
+        # db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2020, 1, 1))
+        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2024, 1, 1))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
         end_date = dt.datetime.today()
         dates = self.calendar.select_dates(start_date, end_date)
@@ -47,19 +48,19 @@ class TDXData(DataSource, MinutesDataFunctionMixin):
         """获取 ``date`` 的股票分钟行情"""
         tickers = self.stock_ticker.ticker(date)
         minute_data = self.get_minute_data(date, tickers)
-        auction_time = date + dt.timedelta(hours=9, minutes=25)
-        auction_db_data = self.db_interface.read_table('股票集合竞价数据', columns=['成交价', '成交量', '成交额'], dates=auction_time)
-        df = self.left_shift_minute_data(minute_data=minute_data, auction_db_data=auction_db_data)
-
-        self.db_interface.insert_df(df, '股票分钟行情')
+        # auction_time = date + dt.timedelta(hours=9, minutes=25)
+        # auction_db_data = self.db_interface.read_table('股票集合竞价数据', columns=['成交价', '成交量', '成交额'], dates=auction_time)
+        if not minute_data.empty:
+            # df = self.left_shift_minute_data(minute_data=minute_data, auction_db_data=auction_db_data)
+            self.db_interface.insert_df(minute_data, '股票分钟行情')
 
     def update_convertible_bond_minute(self):
         """更新可转债分钟行情"""
         table_name = '可转债分钟行情'
         cb_tickers = ConvertibleBondTickers(self.db_interface)
 
-        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(1998, 9, 2))
-        # db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2022, 9, 2))
+        # db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(1998, 9, 2))
+        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2024, 1, 1))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
         end_date = dt.datetime.today()
         dates = self.calendar.select_dates(start_date, end_date)
@@ -70,7 +71,8 @@ class TDXData(DataSource, MinutesDataFunctionMixin):
             self.db_interface.insert_df(minute_data, table_name)
 
     def get_minute_data(self, date: dt.datetime, tickers: Sequence[str]) -> pd.DataFrame:
-        num_days = self.calendar.days_count(date, dt.date.today())
+        # num_days = self.calendar.days_count(date, dt.date.today())
+        num_days = self.calendar.days_count(date, dt.date.today() - dt.timedelta(days=2))
         start_index = num_days * 60 * 4
 
         storage = []
@@ -80,7 +82,7 @@ class TDXData(DataSource, MinutesDataFunctionMixin):
                 code, market = self._split_ticker(ticker)
                 data = self.api.get_security_bars(category=TDXParams.KLINE_TYPE_1MIN, market=market, code=code,
                                                   start=start_index, count=240)
-                if data:
+                if data:### 可能没有数据
                     data = self._formatting_data(data, ticker)
                     storage.append(data)
                 pbar.update()

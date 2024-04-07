@@ -585,14 +585,20 @@
 	"期货日行情": {
 		"DateTime": "date",
 		"ID": "varchar",
+		"昨收盘价": "float",
+		"昨结算价": "float",
 		"开盘价": "float",
 		"最高价": "float",
 		"最低价": "float",
 		"收盘价": "float",
 		"结算价": "float",
+		"涨跌幅1": "float",
+		"涨跌幅2": "float",
 		"成交量": "float",
 		"成交额": "double",
-		"持仓量": "double"
+		"持仓量": "double",
+		"持仓量变化": "double",
+		"交割结算价": "double"
 	},
 	"期权合约": {
 		"ID": "varchar",
@@ -613,18 +619,17 @@
 	"期权日行情": {
 		"DateTime": "date",
 		"ID": "varchar",
-		"成交额": "double",
+		"交易市场": "varchar",
+		"昨结算价": "float",
+		"前收盘价": "float",
 		"开盘价": "float",
 		"最高价": "float",
 		"最低价": "float",
 		"收盘价": "float",
+		"结算价": "float",
 		"成交量": "float",
-		"持仓量": "float",
-		"Delta": "float",
-		"Gamma": "float",
-		"Vega": "float",
-		"Theta": "float",
-		"Rho": "float"
+		"成交额": "float",
+		"持仓量": "float"
 	},
 	"可转债列表": {
 		"ID": "varchar",
@@ -648,13 +653,15 @@
 	"可转债日行情": {
 		"DateTime": "date",
 		"ID": "varchar",
+		"昨收盘价": "float",
 		"开盘价": "float",
 		"最高价": "float",
 		"最低价": "float",
 		"收盘价": "float",
+		"涨跌额": "float",
+		"涨跌幅": "float",
 		"成交量": "float",
-		"成交额": "double",
-		"未转股余额": "double"
+		"成交额": "double"
 	},
 	"可转债分钟行情": {
 		"DateTime": "datetime",
@@ -674,27 +681,19 @@
 	"基金列表": {
 		"ID": "varchar",
 		"证券名称": "str",
-		"全名": "str",
         "管理人": "varchar",
-        "封闭式": "boolean",
 		"投资类型": "varchar",
-		"初始基金": "boolean",
-        "分级基金": "boolean",
-		"债券型": "boolean",
-		"ETF": "boolean",
-		"定开": "boolean",
-        "定开时长(月)": "bigint",
-		"封闭运作转LOF时长(月)": "bigint",
+		"成立日期": "date",
+		"到期日期": "date",
+		"上市时间": "date",
+		"发行日期": "date",
+		"退市日期": "date",
+		"面值": "float",
 		"管理费率": "float",
-        "浮动管理费": "boolean",
-		"浮动管理费说明": "str",
         "托管费率": "float",
-		"销售服务费率": "float",
-		"前端申购费": "str",
-		"后端申购费": "str",
-		"最高申购费": "float",
-		"赎回费": "str",
-		"免赎回费持有期(日)": "bigint"
+		"投资风格": "str",
+		"基金类型": "str",
+		"E场内O场外": "str"
 	},
 	"基金时间表": {
 		"ID": "varchar",

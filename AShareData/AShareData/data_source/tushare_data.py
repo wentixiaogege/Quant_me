@@ -19,7 +19,7 @@ from tqdm import tqdm
 from .data_source import DataSource
 from .. import config, constants, date_utils, utils
 from ..database_interface import DBInterface
-from ..tickers import FundTickers, FundWithStocksTickers, StockFundTickers, StockTickers
+from ..tickers import FundTickers, FundWithStocksTickers, StockFundTickers, ConvertibleBondTickers,FutureTickers,StockTickers
 
 START_DATE = {
     'common': dt.datetime(1990, 1, 1),
@@ -428,6 +428,68 @@ class TushareData(DataSource):
         self.db_interface.update_df(df, data_category)
         logging.getLogger(__name__).debug(f'{ticker if ticker else ""}{data_category}下载完成.')
         return df
+    @cached_property
+    def convertible_bond_list(self):
+        return ConvertibleBondTickers(self.db_interface)
+    def update_convertible_bond_daily_data(self):
+        """更新可转债日行情"""
+        table_name = '可转债日行情'
+        renaming_dict = self._factor_param[table_name]['输出参数']
+        start_date = self.db_interface.get_latest_timestamp(table_name, dt.datetime(1993, 2, 9))
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
+
+        bond_fields = list(renaming_dict.keys())
+
+        with tqdm(dates) as pbar:
+            for date in dates:
+                pbar.set_description(f'下载{date}的{table_name}')
+                tickers = self.convertible_bond_list.ticker(date)
+                if tickers:
+                    data = self._pro.cb_daily(trade_date=date.strftime('%Y%m%d'), fields=bond_fields)
+                    data.rename(renaming_dict, axis=1, inplace=True)
+                    self.db_interface.insert_df(data, table_name)
+                pbar.update()
+    @cached_property
+    def future_list(self) -> FutureTickers:
+        return FutureTickers(self.db_interface)
+    def update_future_daily_data(self):
+        """更新期货日行情"""
+        future_daily_table_name = '期货日行情'
+        renaming_dict = self._factor_param[future_daily_table_name]['输出参数']
+        # start_date = self.db_interface.get_latest_timestamp(future_daily_table_name)
+        start_date = dt.datetime(1999, 1, 4)
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
+        output_fields = '输出参数'
+        future_fields = list(renaming_dict.keys())
+
+        rate_limiter = RateLimiter(500, period=60)
+        with tqdm(dates) as pbar:
+            for date in dates:
+                with rate_limiter:
+                    pbar.set_description(f'下载{date}的{future_daily_table_name}')
+                    data = self._pro.fut_daily(trade_date=date.strftime('%Y%m%d'), exchange='DCE', fields=future_fields)
+                    data.rename(renaming_dict, axis=1, inplace=True)
+                    if data.shape[0] >0:
+                        self.db_interface.insert_df(data, future_daily_table_name)
+                    pbar.update()
+    def update_stock_option_daily_data(self) -> None:
+        """更新股票ETF期权和股指期权日行情"""
+        contract_daily_table_name = '期权日行情'
+        renaming_dict = self._factor_param[contract_daily_table_name]['输出参数']
+
+        start_date = self.db_interface.get_latest_timestamp(contract_daily_table_name, dt.datetime(2015, 2, 8))
+        dates = self.calendar.select_dates(start_date, dt.date.today(), inclusive=(False, True))
+        stock_option_fields = list(renaming_dict.keys())
+        rate_limiter = RateLimiter(490, period=60)
+
+        with tqdm(dates) as pbar:
+            for date in dates:
+                with rate_limiter:
+                    pbar.set_description(f'下载{date}的{contract_daily_table_name}')
+                    data = self._pro.opt_daily(trade_date=date.strftime('%Y%m%d'), exchange='DCE', fields=stock_option_fields)
+                    data.rename(renaming_dict, axis=1, inplace=True)
+                    self.db_interface.insert_df(data, contract_daily_table_name)
+                    pbar.update()
 
     def update_hq_daily(self):
         table_name = '股票日行情'

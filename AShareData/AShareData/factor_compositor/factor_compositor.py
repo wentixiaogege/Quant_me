@@ -235,7 +235,8 @@ class MarketSummaryCompositor(FactorCompositor):
         super().__init__(db_interface)
         self.table_name = '市场汇总'
         # self.init_date = dt.datetime(2001, 1, 1)
-        self.init_date = dt.datetime(2008, 1, 3)
+        # self.init_date = dt.datetime(2008, 1, 3)
+        self.init_date = dt.datetime(2010, 1, 5)
         records = utils.load_excel('自编指数配置.xlsx')
         policies = {}
         for record in records:
@@ -253,7 +254,8 @@ class MarketSummaryCompositor(FactorCompositor):
     def update(self):
         price_table_name = '股票日行情'
 
-        start_date = self.db_interface.get_latest_timestamp(self.table_name, self.init_date)
+        # start_date = self.db_interface.get_latest_timestamp(self.table_name, self.init_date)
+        start_date = self.init_date
         end_date = self.db_interface.get_latest_timestamp(price_table_name, dt.date(1990, 12, 10))
         dates = self.calendar.select_dates(start_date, end_date, (False, True))
         with tqdm(dates) as pbar:
@@ -265,10 +267,25 @@ class MarketSummaryCompositor(FactorCompositor):
                 float_share = self.float_share.get_data(dates=date, ids=tickers)
                 free_float_share = self.free_float_share.get_data(dates=date, ids=tickers)
 
+                ### TODO 数据长度不一样，下面代码没办法跑了，可能是数据下载还是不够全面,
+                daily_info1 = daily_info.reset_index()
+                total_share1 = total_share.reset_index()
+                float_share1 = float_share.reset_index()
+                free_float_share1 = free_float_share.reset_index()
+                same_tickes = set(tickers) & \
+                              set(daily_info1.ID.unique())& \
+                              set(total_share1.ID.unique())& \
+                              set(float_share1.ID.unique())& \
+                              set(free_float_share1.ID.unique())
+                daily_info = daily_info1[daily_info1.ID.isin(same_tickes)].set_index(['DateTime', 'ID'])
+                total_share = total_share1[total_share1.ID.isin(same_tickes)].set_index(['DateTime', 'ID'])
+                float_share = float_share1[float_share1.ID.isin(same_tickes)].set_index(['DateTime', 'ID'])
+                free_float_share = free_float_share1[free_float_share1.ID.isin(same_tickes)].set_index(['DateTime', 'ID'])
                 vol = daily_info['成交额'].sum()
                 float_val = daily_info['收盘价'].dot(float_share)
                 free_float_val = daily_info['收盘价'].dot(free_float_share)
-                total_df = daily_info['收盘价'] * total_share
+                total_df = daily_info.join(total_share)[['收盘价','总股本']]
+                total_df = total_df['收盘价'] * total_df['总股本']
                 total_val = total_df.sum()
 
                 earning_ttm = self.data_reader.earning_ttm.get_data(ids=tickers, dates=date)

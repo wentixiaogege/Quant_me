@@ -155,8 +155,8 @@ class JQData(DataSource, MinutesDataFunctionMixin):
     def update_stock_morning_auction_data(self):
         """更新早盘集合竞价数据"""
         table_name = '股票集合竞价数据'
-        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2015, 1, 1))
-        # db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2022, 12, 23))
+        # db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2015, 1, 1))
+        db_timestamp = self.db_interface.get_latest_timestamp(table_name, dt.datetime(2022, 12, 26))
         start_date = self.calendar.offset(db_timestamp.date(), 1)
         end_date = dt.datetime.today()
         dates = self.calendar.select_dates(start_date, end_date)
@@ -175,7 +175,7 @@ class JQData(DataSource, MinutesDataFunctionMixin):
         tickers = self.stock_tickers.ticker(date)
         tickers = [self.windcode2jqcode(it) for it in tickers]
         ##### 新加，测试账号没有BJ的数据
-        # tickers = [i for i in tickers if 'BJ' not in i ]
+        tickers = [i for i in tickers if 'BJ' not in i ]
         data = jq.get_call_auction(tickers, start_date=date_str, end_date=date_str)
         auction_time = dt.datetime.combine(date.date(), dt.time(hour=9, minute=25))
         data.time = auction_time

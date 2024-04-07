@@ -10,8 +10,15 @@ from sqlalchemy import Boolean, Column, Date, DateTime, extract, Float, Integer,
 from sqlalchemy.dialects.mysql import DOUBLE, insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func, text
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.expression import Insert
 
 from . import utils
+
+
+@compiles(Insert)
+def _prefix_insert_with_ignore(insert, compiler, **kw):
+    return compiler.visit_insert(insert.prefix_with('IGNORE'), **kw)
 
 
 class DBInterface(object):
@@ -199,9 +206,18 @@ class MySQLInterface(DBInterface):
     def insert_df(self, df: Union[pd.Series, pd.DataFrame], table_name: str) -> None:
         if df.empty:
             return
+        from sqlalchemy.dialects.mysql import insert
+
+        # def insert_on_duplicate(table, conn, keys, data_iter):## 有些股票已经停牌了，数据可能重复了；
+        #     insert_stmt = insert(table.table).values(list(data_iter))
+        #     on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(insert_stmt.inserted)
+        #     conn.execute(on_duplicate_key_stmt)
 
         start_timestamp = time.time()
-        df.to_sql(table_name, self.engine, if_exists='append')
+        if len(df.index.names)>1:
+            df.to_sql(table_name, self.engine, if_exists='append')
+        else:
+            df.to_sql(table_name, self.engine, if_exists='append', index= False) ## 有些表没有index字段
         # df.to_sql(table_name.lower(), self.engine, if_exists='replace')
         # df.to_sql(table_name, self.engine, if_exists='replace')
         end_timestamp = time.time()
