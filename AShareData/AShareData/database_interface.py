@@ -206,12 +206,6 @@ class MySQLInterface(DBInterface):
     def insert_df(self, df: Union[pd.Series, pd.DataFrame], table_name: str) -> None:
         if df.empty:
             return
-        from sqlalchemy.dialects.mysql import insert
-
-        # def insert_on_duplicate(table, conn, keys, data_iter):## 有些股票已经停牌了，数据可能重复了；
-        #     insert_stmt = insert(table.table).values(list(data_iter))
-        #     on_duplicate_key_stmt = insert_stmt.on_duplicate_key_update(insert_stmt.inserted)
-        #     conn.execute(on_duplicate_key_stmt)
 
         start_timestamp = time.time()
         if len(df.index.names)>1:

@@ -44,6 +44,7 @@ class SMBandHMLCompositor(ModelFactorCompositor):
         cap = self.cap.get_data(ids=tickers, dates=balance_date).droplevel('DateTime')
         returns = self.returns.get_data(ids=tickers, dates=[pre_date, date]).droplevel('DateTime')
         df = pd.concat([returns, bm, cap], axis=1).dropna()
+        df = df.drop_duplicates() #### TODO 新加，说有重复的？
 
         # grouping
         df['G_SMB'] = pd.qcut(df[self.cap.name], self.model.smb_threshold, labels=['small', 'big'])

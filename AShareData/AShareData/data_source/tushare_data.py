@@ -59,19 +59,22 @@ class TushareData(DataSource):
 
     def init_db(self):
         """Initialize database data. They cannot be achieved by naive ``update_*`` function"""
-        self.init_hk_calendar()
-        self.init_stock_names()
-        self.init_accounting_data()
-        fund_tickers = FundTickers(self.db_interface).all_ticker()
-        self.update_fund_portfolio(fund_tickers)
+        self.init_hk_calendar() # 港股交易日历 跟下面的啥区别？？？？
+        self.init_stock_names() # 证券名称（A股股票）
+        self.init_accounting_data() # 更新财报数据的？？
+        fund_tickers = FundTickers(self.db_interface).all_ticker() # 获取所有的基金信息，先开始都是空的啊。
+        self.update_fund_portfolio(fund_tickers) # 更新公募基金持仓数据
 
     def update_base_info(self):
         """Update calendar and ticker lists"""
-        self.update_calendar()
-        self.update_hk_calendar()
-        self.update_stock_list_date()
-        self.update_convertible_bond_list_date()
-        # self.update_fund_list_date()
+        self.update_calendar() # 交易日历
+        self.update_hk_calendar() #港股交易日历
+        self.update_stock_list_date() #证券代码 - 类型是（A股股票）
+        self.update_convertible_bond_list_date() #下面三个表
+            # table_name1 = '证券代码'- 类型是（可转债）
+            # table_name2 = '证券名称'
+            # table_name3 = '可转债列表'
+        self.update_fund_list_date()
         self.update_future_list_date()
         self.update_option_list_date()
         self.calendar = date_utils.SHSZTradingCalendar(self.db_interface)
@@ -153,17 +156,18 @@ class TushareData(DataSource):
 
         """
         data_category = '股票列表'
+        table_name='证券代码'
 
         logging.getLogger(__name__).debug(f'开始下载{data_category}.')
         storage = []
-        list_status = ['L', 'D', 'P']
+        list_status = ['L', 'D', 'P'] # L上市 D退市 P暂停上市，默认是L
         fields = ['ts_code', 'list_date', 'delist_date']
         for status in list_status:
             storage.append(self._pro.stock_basic(exchange='', list_status=status, fields=fields))
         output = pd.concat(storage)
         output['证券类型'] = 'A股股票'
         list_info = self._format_list_date(output.loc[:, ['ts_code', 'list_date', 'delist_date', '证券类型']])
-        self.db_interface.update_df(list_info, '证券代码')
+        self.db_interface.update_df(list_info, table_name)
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
     # TODO
@@ -191,6 +195,9 @@ class TushareData(DataSource):
             ref: https://tushare.pro/document/2?doc_id=185
         """
         data_category = '可转债基本信息'
+        table_name1 = '证券代码'
+        table_name2 = '证券名称'
+        table_name3 = '可转债列表'
         desc = self._factor_param[data_category]['输出参数']
 
         logging.getLogger(__name__).debug(f'开始下载{data_category}.')
@@ -200,23 +207,22 @@ class TushareData(DataSource):
         list_info = output.loc[:, ['ts_code', 'list_date', 'delist_date']]
         list_info['证券类型'] = '可转债'
         list_info = self._format_list_date(list_info, extend_delist_date=True)
-        self.db_interface.update_df(list_info, '证券代码')
+        self.db_interface.update_df(list_info, table_name1)
 
         # names
         name_info = output.loc[:, ['list_date', 'ts_code', 'bond_short_name']].rename({'list_date': 'DateTime'},
                                                                                       axis=1).dropna()
         name_info = self._standardize_df(name_info, desc)
-        self.db_interface.update_df(name_info, '证券名称')
+        self.db_interface.update_df(name_info, table_name2)
 
         # info
         output = self._standardize_df(output, desc)
         for col in output.columns:
             output[col] = output[col].where(output[col].notnull(), other=None)
-            # output[col] = output[col].fillna(None)
             output[col] = output[col].replace(np.nan, None)
 
         output = output.where(pd.notnull(output), None)
-        self.db_interface.update_df(output, '可转债列表')
+        self.db_interface.update_df(output, table_name3)
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
     def update_future_list_date(self) -> None:
@@ -412,7 +418,7 @@ class TushareData(DataSource):
         return df
 
     def update_stock_names(self, ticker: str = None) -> pd.DataFrame:
-        """更新曾用名
+        """更新曾用名，A股股票
 
         ref: https://tushare.pro/document/2?doc_id=100
 
@@ -690,7 +696,7 @@ class TushareData(DataSource):
             download_data(f, combined_types, desc, f'合并{table}')
 
     def init_accounting_data(self):
-        tickers = self.stock_tickers.all_ticker()
+        tickers = self.stock_tickers.all_ticker() # 证券代码 读取类型=A股股票 的所有股票；最初肯定是空的
         db_ticker = self.db_interface.get_column_max('合并资产负债表', 'ID')
         if db_ticker:
             tickers = tickers[tickers.index(db_ticker):]

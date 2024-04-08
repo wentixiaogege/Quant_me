@@ -163,10 +163,10 @@ class StockSelectionPolicy(SecuritySelectionPolicy):
     def __post_init__(self):
         if self.ignore_new_stock_period:
             # self.ignore_new_stock_period = int(self.ignore_new_stock_period)
-            self.ignore_new_stock_period = None if np.isnan(self.select_new_stock_period) else self.select_new_stock_period
+            self.ignore_new_stock_period = None if pd.isnull(self.ignore_new_stock_period) or np.isnan(self.ignore_new_stock_period) else self.ignore_new_stock_period
         if self.select_new_stock_period:
             # self.select_new_stock_period = int(self.select_new_stock_period)
-            self.select_new_stock_period = None if np.isnan(self.select_new_stock_period) else self.select_new_stock_period
+            self.select_new_stock_period = None if pd.isnull(self.select_new_stock_period) or np.isnan(self.select_new_stock_period) else self.select_new_stock_period
         if self.industry_provider:
             if self.industry_provider not in constants.INDUSTRY_DATA_PROVIDER:
                 raise ValueError('非法行业分类机构!')

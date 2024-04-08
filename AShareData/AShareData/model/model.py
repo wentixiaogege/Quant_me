@@ -1,3 +1,4 @@
+import datetime
 import datetime as dt
 from typing import List
 
@@ -53,10 +54,10 @@ class ModelFactorCompositor(FactorCompositor):
 
     def update_monthly_rebalanced_portfolio_return(self):
         eg_factor_name = f'{self.factor_names[-1]}_MD'
-        start_date = self.db_interface.get_latest_timestamp(self.db_table_name, self.start_date,
-                                                            column_condition=('ID', eg_factor_name))
-        # end_date = self.db_interface.get_latest_timestamp('股票日行情')#日线行情
-        end_date = self.db_interface.get_latest_timestamp('日线行情')#
+        # start_date = self.db_interface.get_latest_timestamp(self.db_table_name, self.start_date,column_condition=('ID', eg_factor_name))
+        start_date = datetime.datetime(2010,1,1)
+        end_date = self.db_interface.get_latest_timestamp('股票日行情')#日线行情
+        # end_date = self.db_interface.get_latest_timestamp('日线行情')#
         dates = self.data_reader.calendar.select_dates(start_date, end_date, inclusive=(False, True))
 
         with tqdm(dates) as pbar:
@@ -79,10 +80,12 @@ class ModelFactorCompositor(FactorCompositor):
 
     def update_daily_rebalanced_portfolio(self):
         eg_factor_name = f'{self.factor_names[-1]}_DD'
-        start_date = self.db_interface.get_latest_timestamp(self.db_table_name, self.start_date,
-                                                            column_condition=('ID', eg_factor_name))
-        # end_date = self.db_interface.get_latest_timestamp('股票日行情')#日线行情
-        end_date = self.db_interface.get_latest_timestamp('日线行情')#
+        # start_date = self.db_interface.get_latest_timestamp(self.db_table_name, self.start_date,
+        #                                                     column_condition=('ID', eg_factor_name))
+        start_date = datetime.datetime(2010,1,1)
+
+        end_date = self.db_interface.get_latest_timestamp('股票日行情')#日线行情
+        # end_date = self.db_interface.get_latest_timestamp('日线行情')#
         dates = self.data_reader.calendar.select_dates(start_date, end_date, inclusive=(False, True))
 
         with tqdm(dates) as pbar:
