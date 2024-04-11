@@ -12,7 +12,6 @@ class DataSource(object):
 
     def __init__(self, db_interface: DBInterface = None) -> None:
         self.db_interface = db_interface if db_interface else get_db_interface()
-        self.calendar = date_utils.SHSZTradingCalendar(self.db_interface)
 
     def __enter__(self):
         self.login()

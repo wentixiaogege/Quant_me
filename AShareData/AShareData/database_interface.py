@@ -208,7 +208,7 @@ class MySQLInterface(DBInterface):
             return
 
         start_timestamp = time.time()
-        if len(df.index.names)>1:
+        if (len(df.index.names)) or (type(df) is pd.Series): # 日期表就要走这里
             df.to_sql(table_name, self.engine, if_exists='append')
         else:
             df.to_sql(table_name, self.engine, if_exists='append', index= False) ## 有些表没有index字段

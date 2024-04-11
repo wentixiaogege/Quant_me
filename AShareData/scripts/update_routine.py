@@ -1,5 +1,4 @@
 import sys
-
 import AShareData as asd
 
 
@@ -27,6 +26,7 @@ def daily_routine(config_loc: str):
         # 更新基金列表--- 使用tushare的 wind的没有权限
         print('update_fund_list_date')
         # tushare_crawler.update_fund_list_date() #### update_base_info 里面有了
+        # tushare_crawler.update_fund_portfolio() ### 公募基金持仓数据
         # tushare_crawler.update_fund_daily()
         # tushare_crawler.update_fund_dividend()
         # tushare_crawler.update_financial_data()
@@ -77,11 +77,11 @@ def daily_routine(config_loc: str):
     # asd.NegativeBookEquityListingCompositor().update()
     # asd.IndexUpdater().update()
     # asd.MarketSummaryCompositor().update() ### 要3天
-
-    # model data
-    asd.model.SMBandHMLCompositor().update()
-    asd.model.UMDCompositor().update()
-
+    #
+    # # model data
+    # asd.model.SMBandHMLCompositor().update() # 2天
+    # asd.model.UMDCompositor().update() # 2天
+    #
 
 if __name__ == '__main__':
     daily_routine(sys.argv[1])

@@ -49,7 +49,6 @@ class TushareData(DataSource):
         self.token = tushare_token
         self._pro = None
         self._factor_param = utils.load_param('tushare_param.json', param_json_loc)
-        self.calendar = date_utils.SHSZTradingCalendar(self.db_interface)
 
     def login(self):
         self._pro = ts.pro_api(self.token)
@@ -59,25 +58,45 @@ class TushareData(DataSource):
 
     def init_db(self):
         """Initialize database data. They cannot be achieved by naive ``update_*`` function"""
-        self.init_hk_calendar() # 港股交易日历 跟下面的啥区别？？？？
-        self.init_stock_names() # 证券名称（A股股票）
-        self.init_accounting_data() # 更新财报数据的？？
-        fund_tickers = FundTickers(self.db_interface).all_ticker() # 获取所有的基金信息，先开始都是空的啊。
-        self.update_fund_portfolio(fund_tickers) # 更新公募基金持仓数据
+        # self.init_hk_calendar() # 港股交易日历 跟下面的啥区别？？？？ 每隔5年更新，不删除之前的；
+        # self.init_stock_names() # 证券名称（A股股票）
+        # self.init_accounting_data() # 更新财报数据的？？
+        # fund_tickers = FundTickers(self.db_interface).all_ticker() # 获取所有的基金信息，先开始都是空的啊。
+        # self.update_fund_portfolio(fund_tickers) # 更新公募基金持仓数据
 
     def update_base_info(self):
         """Update calendar and ticker lists"""
-        self.update_calendar() # 交易日历
-        self.update_hk_calendar() #港股交易日历
-        self.update_stock_list_date() #证券代码 - 类型是（A股股票）
-        self.update_convertible_bond_list_date() #下面三个表
-            # table_name1 = '证券代码'- 类型是（可转债）
-            # table_name2 = '证券名称'
-            # table_name3 = '可转债列表'
-        self.update_fund_list_date()
-        self.update_future_list_date()
-        self.update_option_list_date()
+        # print('self.update_calendar()')
+        # self.update_calendar() # 上交所【交易日历】，删除重建
+        # print('self.update_hk_calendar()')
+        # self.update_hk_calendar() #【港股交易日历】，删除重建
+        print('self.update_stock_list_date()')
+        # self.update_stock_list_date() #
+        # 【证券代码】 - 类型是（A股股票）
+        # 【证券名称】
+        print('self.update_stock_list_date()')
+        self.update_convertible_bond_list_date() #更新下面三个表，
+            # table_name1 = '【证券代码】'- 类型是（可转债）
+            # table_name2 = '【证券名称】'
+            # table_name3 = '【可转债列表】'
+        print('self.update_stock_list_date()')
+        self.update_fund_list_date() # 更新下面三个表，
+            # 公募基金列表 - 证券代码'- 类型是（基金）
+            # 公募基金列表 - 证券名称
+            # 公募基金列表 - 基金列表
+        print('self.update_stock_list_date()')
+        self.update_future_list_date() # 更新下面三个表，
+            # 期货合约信息表 - 证券代码 类型是（期货）
+            # 期货合约信息表 - 证券名称
+            # 期货合约信息表 - 期货合约
+        print('self.update_stock_list_date()')
+        self.update_option_list_date() # 更新下面三个表，
+            # 期权合约信息- 证券代码 类型是（期货）
+            # 期权合约信息- 证券名称
+            # 期权合约信息- 期权合约
+        print('self.update_stock_list_date()')
         self.calendar = date_utils.SHSZTradingCalendar(self.db_interface)
+
 
     #######################################
     # init func
@@ -85,9 +104,9 @@ class TushareData(DataSource):
     def init_hk_calendar(self) -> None:
         """ 更新港交所交易日历 """
         table_name = '港股交易日历'
-        if self.db_interface.get_latest_timestamp(table_name):
+        if self.db_interface.get_latest_timestamp(table_name): ## 如果有数据
             df = self._pro.hk_tradecal(is_open=1)
-        else:
+        else: ## 否则每隔5年读取一次tushare
             storage = []
             end_dates = ['19850101', '19900101', '19950101', '20000101', '20050101', '20100101', '20150101', '20200101']
             for end_date in end_dates:
@@ -170,6 +189,18 @@ class TushareData(DataSource):
         self.db_interface.update_df(list_info, table_name)
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
 
+        """获取所有股票的曾用名"""
+        raw_df = self.update_stock_names()
+        raw_df_start_dates = raw_df.index.get_level_values('DateTime').min()
+        uncovered_stocks = self.stock_tickers.ticker(raw_df_start_dates)
+
+        with tqdm(uncovered_stocks) as pbar:
+            for stock in uncovered_stocks:
+                pbar.set_description(f'下载{stock}的股票名称')
+                self.update_stock_names(stock)
+                pbar.update()
+        logging.getLogger(__name__).info('股票曾用名下载完成.')
+
     # TODO
     def get_hk_stock_list_date(self):
         """ 更新所有港股股票列表, 包括上市, 退市和暂停上市的股票
@@ -197,7 +228,7 @@ class TushareData(DataSource):
         data_category = '可转债基本信息'
         table_name1 = '证券代码'
         table_name2 = '证券名称'
-        table_name3 = '可转债列表'
+        table_name3 = '可转债列表' #### 这表会比上面那个的全面一些，最新的数据
         desc = self._factor_param[data_category]['输出参数']
 
         logging.getLogger(__name__).debug(f'开始下载{data_category}.')
@@ -206,16 +237,15 @@ class TushareData(DataSource):
         # list date
         list_info = output.loc[:, ['ts_code', 'list_date', 'delist_date']]
         list_info['证券类型'] = '可转债'
-        list_info = self._format_list_date(list_info, extend_delist_date=True)
+        list_info = self._format_list_date(list_info, extend_delist_date=True) ## dropna 了
         self.db_interface.update_df(list_info, table_name1)
 
-        # names
-        name_info = output.loc[:, ['list_date', 'ts_code', 'bond_short_name']].rename({'list_date': 'DateTime'},
-                                                                                      axis=1).dropna()
+        # names ## dropna 了
+        name_info = output.loc[:, ['list_date', 'ts_code', 'bond_short_name']].rename({'list_date': 'DateTime'},axis=1).dropna()
         name_info = self._standardize_df(name_info, desc)
         self.db_interface.update_df(name_info, table_name2)
 
-        # info
+        # info 没有dropna
         output = self._standardize_df(output, desc)
         for col in output.columns:
             output[col] = output[col].where(output[col].notnull(), other=None)
@@ -1099,8 +1129,10 @@ class TushareData(DataSource):
         table_name = '公募基金持仓'
         params = self._factor_param[table_name]['输出参数']
         rate = self._factor_param[table_name]['每分钟限速']
+        # fund_tickers = FundTickers(self.db_interface).all_ticker() # 获取所有的基金信息，先开始都是空的啊。
+
         if tickers is None:
-            tickers = FundTickers(self.db_interface).ticker()
+            tickers = FundTickers(self.db_interface).all_ticker()
 
         with tqdm(tickers) as pbar:
             rate_limiter = RateLimiter(rate - 1, period=60)
