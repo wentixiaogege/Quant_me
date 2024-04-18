@@ -23,12 +23,12 @@ from ..tickers import FundTickers, FundWithStocksTickers, StockFundTickers, Conv
 
 START_DATE = {
     'common': dt.datetime(1990, 1, 1),
-    'shibor': dt.datetime(2006, 10, 8),
-    'ggt': dt.datetime(2016, 6, 29),  # 港股通
+    'shibor': dt.datetime(2006, 10, 8), # tushare就这么多的数据
+    'ggt': dt.datetime(2016, 6, 29),  # 港股通,tushare就这么多的数据
     'hk_cal': dt.datetime(1980, 1, 1),
     'hk_daily': dt.datetime(1990, 1, 2),
     'fund_daily': dt.datetime(1998, 4, 6),
-    'index_daily': dt.datetime(2008, 1, 1),
+    'index_daily': dt.datetime(2006, 1, 1),
     'index_weight': dt.datetime(2005, 1, 1)
 }
 
@@ -66,35 +66,35 @@ class TushareData(DataSource):
 
     def update_base_info(self):
         """Update calendar and ticker lists"""
-        # print('self.update_calendar()')
-        # self.update_calendar() # 上交所【交易日历】，删除重建
-        # print('self.update_hk_calendar()')
-        # self.update_hk_calendar() #【港股交易日历】，删除重建
-        print('self.update_stock_list_date()')
+        # # print('self.update_calendar()')
+        # # self.update_calendar() # 上交所【交易日历】，删除重建
+        # # print('self.update_hk_calendar()')
+        # # self.update_hk_calendar() #【港股交易日历】，删除重建
+        # print('self.update_stock_list_date()')
         # self.update_stock_list_date() #
         # 【证券代码】 - 类型是（A股股票）
-        # 【证券名称】
-        print('self.update_stock_list_date()')
-        self.update_convertible_bond_list_date() #更新下面三个表，
-            # table_name1 = '【证券代码】'- 类型是（可转债）
-            # table_name2 = '【证券名称】'
-            # table_name3 = '【可转债列表】'
-        print('self.update_stock_list_date()')
-        self.update_fund_list_date() # 更新下面三个表，
-            # 公募基金列表 - 证券代码'- 类型是（基金）
-            # 公募基金列表 - 证券名称
-            # 公募基金列表 - 基金列表
-        print('self.update_stock_list_date()')
-        self.update_future_list_date() # 更新下面三个表，
-            # 期货合约信息表 - 证券代码 类型是（期货）
-            # 期货合约信息表 - 证券名称
-            # 期货合约信息表 - 期货合约
-        print('self.update_stock_list_date()')
-        self.update_option_list_date() # 更新下面三个表，
-            # 期权合约信息- 证券代码 类型是（期货）
-            # 期权合约信息- 证券名称
-            # 期权合约信息- 期权合约
-        print('self.update_stock_list_date()')
+        # # 【证券名称】
+        # print('self.update_stock_list_date()')
+        # self.update_convertible_bond_list_date() #更新下面三个表，
+        #     # table_name1 = '【证券代码】'- 类型是（可转债）
+        #     # table_name2 = '【证券名称】'
+        #     # table_name3 = '【可转债列表】'
+        # print('self.update_stock_list_date()')
+        # self.update_fund_list_date() # 更新下面三个表，
+        #     # 公募基金列表 - 证券代码'- 类型是（基金）
+        #     # 公募基金列表 - 证券名称
+        #     # 公募基金列表 - 基金列表
+        # print('self.update_stock_list_date()')
+        # self.update_future_list_date() # 更新下面三个表，
+        #     # 期货合约信息表 - 证券代码 类型是（期货）
+        #     # 期货合约信息表 - 证券名称
+        #     # 期货合约信息表 - 期货合约
+        # print('self.update_stock_list_date()')
+        # self.update_option_list_date() # 更新下面三个表，
+        #     # 期权合约信息- 证券代码 类型是（期货）
+        #     # 期权合约信息- 证券名称
+        #     # 期权合约信息- 期权合约
+        # print('self.update_stock_list_date()')
         self.calendar = date_utils.SHSZTradingCalendar(self.db_interface)
 
 
@@ -177,7 +177,7 @@ class TushareData(DataSource):
         data_category = '股票列表'
         table_name='证券代码'
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         storage = []
         list_status = ['L', 'D', 'P'] # L上市 D退市 P暂停上市，默认是L
         fields = ['ts_code', 'list_date', 'delist_date']
@@ -210,7 +210,7 @@ class TushareData(DataSource):
         """
         data_category = '股票列表'
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         storage = []
         list_status = ['L', 'D']
         for status in list_status:
@@ -231,7 +231,7 @@ class TushareData(DataSource):
         table_name3 = '可转债列表' #### 这表会比上面那个的全面一些，最新的数据
         desc = self._factor_param[data_category]['输出参数']
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         output = self._pro.cb_basic(fields=list(desc.keys()))
 
         # list date
@@ -266,7 +266,7 @@ class TushareData(DataSource):
             g = re.match(r'[\d.]*', a)
             return float(g.group(0))
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         storage = []
         for exchange in constants.FUTURE_EXCHANGES:
             storage.append(self._pro.fut_basic(exchange=exchange, fields=list(desc.keys()) + ['per_unit']))
@@ -307,7 +307,7 @@ class TushareData(DataSource):
         data_category = '期权合约信息'
         desc = self._factor_param[data_category]['输出参数']
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         storage = []
         for exchange in constants.FUTURE_EXCHANGES + constants.STOCK_EXCHANGES:
             storage.append(self._pro.opt_basic(exchange=exchange, fields=list(desc.keys())))
@@ -341,7 +341,7 @@ class TushareData(DataSource):
         data_category = '公募基金列表'
         desc = self._factor_param[data_category]['输出参数']
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         storage = []
         for market, status in itertools.product(['E', 'O'], ['D', 'I', 'L']):
             storage.append(self._pro.fund_basic(market=market, status=status, fields=list(desc.keys())))
@@ -390,8 +390,13 @@ class TushareData(DataSource):
         data_category = 'Shibor利率数据'
         desc = self._factor_param[data_category]['输出参数']
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
-        df = self._pro.shibor(start_date=start_date, end_date=end_date)
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
+        storage = []
+        end_dates = ['19850101', '19900101', '19950101', '20000101', '20050101', '20100101', '20150101', '20200101',None]
+        for end_date in end_dates:
+            print('ljj get_shibor debuging '+str(end_date))
+            storage.append(self._pro.shibor(end_date=end_date))
+        df = pd.concat(storage)
         df = self._standardize_df(df, desc)
         self.db_interface.update_df(df, data_category)
         logging.getLogger(__name__).info(f'{data_category}下载完成.')
@@ -412,7 +417,7 @@ class TushareData(DataSource):
         column_desc = self._factor_param[data_category]['输出参数']
         fields = list(column_desc.keys())
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         storage = []
         for exchange in constants.STOCK_EXCHANGES:
             storage.append(self._pro.stock_company(exchange=exchange, fields=fields))
@@ -428,8 +433,14 @@ class TushareData(DataSource):
         data_category = 'IPO新股列表'
         column_desc = self._factor_param[data_category]['输出参数']
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
-        df = self._pro.new_share(start_date=start_date)
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
+        storage = []
+        end_dates = ['19850101', '19900101', '19950101', '20000101', '20050101', '20100101', '20150101', '20200101',None]
+        for end_date in end_dates:
+            print('ljj get_shibor debuging ' + str(end_date))
+            storage.append(self._pro.new_share(end_date=end_date))
+        df = pd.concat(storage)
+        # df = self._pro.new_share(start_date=start_date)
         df[['amount', 'market_amount', 'limit_amount']] = df[['amount', 'market_amount', 'limit_amount']] * 10000
         df['funds'] = df['funds'] * 100000000
 
@@ -458,11 +469,11 @@ class TushareData(DataSource):
         column_desc = self._factor_param[data_category]['输出参数']
         fields = list(column_desc.keys())
 
-        logging.getLogger(__name__).debug(f'开始下载{ticker if ticker else ""}{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{ticker if ticker else ""}{data_category}.')
         df = self._pro.namechange(ts_code=ticker, fields=fields)
         df = self._standardize_df(df, column_desc)
         self.db_interface.update_df(df, data_category)
-        logging.getLogger(__name__).debug(f'{ticker if ticker else ""}{data_category}下载完成.')
+        logging.getLogger(__name__).info(f'{ticker if ticker else ""}{data_category}下载完成.')
         return df
     @cached_property
     def convertible_bond_list(self):
@@ -535,7 +546,7 @@ class TushareData(DataSource):
         rate = self._factor_param[table_name]['每分钟限速']
         rate_limiter = RateLimiter(rate, period=60)
 
-        logging.getLogger(__name__).debug(f'开始下载{table_name}.')
+        logging.getLogger(__name__).info(f'开始下载{table_name}.')
         with tqdm(dates) as pbar:
             for date in dates:
                 with rate_limiter:
@@ -562,10 +573,10 @@ class TushareData(DataSource):
         if end_date is None:
             end_date = dt.datetime.today()
         dates = [trade_date] if trade_date else self.calendar.select_dates(start_date, end_date)
-        pre_date = self.calendar.offset(dates[0], -1)
+        pre_date = self.calendar.offset(dates[0], -1)# 前一天
 
+        #### match 3中输出表的接口信息
         output_fields = '输出参数'
-
         price_desc = self._factor_param['日线行情'][output_fields]
         price_fields = list(price_desc.keys())
         adj_factor_desc = self._factor_param['复权因子'][output_fields]
@@ -630,7 +641,7 @@ class TushareData(DataSource):
         data_category = '分红送股'
         column_desc = self._factor_param[data_category]['输出参数']
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         tickers = self.stock_tickers.all_ticker()
         with tqdm(tickers) as pbar:
             for stock in tickers:
@@ -660,7 +671,7 @@ class TushareData(DataSource):
 
         db_date = self.db_interface.get_column_max(data_category, '股权登记日')
         dates_range = self.calendar.select_dates(db_date, dt.date.today(), inclusive=(False, True))
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         with tqdm(dates_range) as pbar:
             for date in dates_range:
                 pbar.set_description(f'下载{date}的分红送股数据')
@@ -732,7 +743,7 @@ class TushareData(DataSource):
             tickers = tickers[tickers.index(db_ticker):]
 
         rate_limiter = RateLimiter(self._factor_param['资产负债表']['每分钟限速'] / 8, 60)
-        logging.getLogger(__name__).debug('开始下载财报.')
+        logging.getLogger(__name__).info('开始下载财报.')
         with tqdm(tickers) as pbar:
             for ticker in tickers:
                 with rate_limiter:
@@ -792,9 +803,11 @@ class TushareData(DataSource):
         return df
 
     def get_hs_constitute(self) -> None:
-        """ 沪深股通成分股进出记录. 月末更新. """
+        """ 沪深股通成分股进出记录. 月末更新. 获取沪股通、深股通成分数据"""
+        """ 沪股通是用于香港的投资者买卖在上海证券交易所（上交所）的A股；深股通是用于香港的投资者买卖在深圳证券交易所（深交所）的A股。"""
+        """ https://www.tushare.pro/document/2?doc_id=104 """
         data_category = '沪深股通成份股'
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         storage = []
         for hs_type, is_new in product(['SH', 'SZ'], ['0', '1']):
             storage.append(self._pro.hs_const(hs_type=hs_type, is_new=is_new))
@@ -811,7 +824,7 @@ class TushareData(DataSource):
 
     @date_utils.strlize_input_dates
     def get_hs_holding(self, date: date_utils.DateType):
-        data_category = '沪深港股通持股明细'
+        data_category = '沪深港股通持股明细' # 沪港股、深港股
         desc = self._factor_param[data_category]['输出参数']
         fields = list(desc.keys())
 
@@ -820,12 +833,13 @@ class TushareData(DataSource):
         self.db_interface.update_df(df, data_category)
 
     def update_hs_holding(self) -> None:
-        """ 沪深港股通持股明细 """
+        """ 沪深港股通持股明细，"港股通"是指沪港通和深港通，它们是中国证监会和香港证监会合作推出的两项创新的证券交易机制。这两个机制使得内地（包括上海和深圳）的投资者可以直接购买在香港交易所上市的指定股票，同时也使得香港及海外的投资者可以直接购买在上海和深圳交易所上市的指定股票。 """
+        """https://www.tushare.pro/document/2?doc_id=188  数据来源港交所。"""
         data_category = '沪深港股通持股明细'
         start_date = self.db_interface.get_latest_timestamp(data_category, START_DATE['ggt'])
         dates = self.calendar.select_dates(start_date, dt.date.today())
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         with tqdm(dates) as pbar:
             for date in dates:
                 pbar.set_description(f'下载{date}的沪深港股通持股明细')
@@ -905,7 +919,7 @@ class TushareData(DataSource):
         rate = self._factor_param[table_name]['每分钟限速']
         rate_limiter = RateLimiter(rate, period=60)
 
-        logging.getLogger(__name__).debug(f'开始下载{table_name}.')
+        logging.getLogger(__name__).info(f'开始下载{table_name}.')
         with tqdm(dates) as pbar:
             for date in dates:
                 with rate_limiter:
@@ -935,7 +949,7 @@ class TushareData(DataSource):
         dates = self.calendar.last_day_of_month(start_date, end_date)
         dates = sorted(list(set([start_date] + dates + [end_date])))
 
-        logging.getLogger(__name__).debug(f'开始下载{data_category}.')
+        logging.getLogger(__name__).info(f'开始下载{data_category}.')
         with tqdm(dates) as pbar:
             for i in range(len(dates) - 1):
                 storage = []

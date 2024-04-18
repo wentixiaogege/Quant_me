@@ -6,22 +6,23 @@ def daily_routine(config_loc: str):
     asd.set_global_config(config_loc)
 
     with asd.TushareData() as tushare_crawler:
-        tushare_crawler.update_base_info()
-        # tushare_crawler.get_shibor()
-        #
-        # tushare_crawler.get_ipo_info()
+        tushare_crawler.update_base_info() ### 各种维度的表和日期
+        # tushare_crawler.get_shibor() # 2006-10-08    | 2024-04-11
+        # tushare_crawler.get_ipo_info() # 2008-01-16    | 2024-04-08
         # tushare_crawler.get_company_info()
-        # tushare_crawler.update_hs_holding()
-        # tushare_crawler.get_hs_constitute()
+        # tushare_crawler.update_hs_holding() # 沪深港股通持股明细,2hour
+        # tushare_crawler.get_hs_constitute() # 沪深股通成份股， tushare 已经不更新了
         #
-        # tushare_crawler.update_stock_names()
-        # tushare_crawler.update_dividend()
+        ### tushare_crawler.update_stock_names() ###数据来源港交所。update_base_info里面有了
+        # tushare_crawler.update_dividend() # 1991-03-17    | 2024-03-08
         #
         # tushare_crawler.update_index_daily() #指数日行情
-        # tushare_crawler.update_stock_list_date() #### update_base_info 里面有了
-        # # 股票日行情 + 复权因子 + 流通股本--- 使用tushare的日线 wind的没有权限
-        # tushare_crawler.update_hq_daily()
-        #
+        ### tushare_crawler.update_stock_list_date() #### update_base_info 里面有了
+        # 5张表 股票日行情 + 复权因子 + 总股本+流通股本+自由流通股本 --- 使用tushare的日线 wind的没有权限
+        tushare_crawler.update_hq_daily()
+        # print('update_pause_stock_info')
+        # tushare_crawler.update_pause_stock_info()# 股票停牌--- 使用tushare的日线 wind的没有权限
+
         # tushare_crawler.update_hk_stock_daily() # 港股日行情
         # 更新基金列表--- 使用tushare的 wind的没有权限
         print('update_fund_list_date')
@@ -29,10 +30,8 @@ def daily_routine(config_loc: str):
         # tushare_crawler.update_fund_portfolio() ### 公募基金持仓数据
         # tushare_crawler.update_fund_daily()
         # tushare_crawler.update_fund_dividend()
-        # tushare_crawler.update_financial_data()
-        print('update_pause_stock_info')
-        # 股票停牌--- 使用tushare的日线 wind的没有权限
-        # tushare_crawler.update_pause_stock_info()
+        # tushare_crawler.update_financial_data() # 合并资产负债表
+
         # 可转债日行情--- 使用tushare的日线 wind的没有权限
         print('update_convertible_bond_daily_data')
         # tushare_crawler.update_convertible_bond_list_date()  # 可转债信息#### update_base_info 里面有了
@@ -73,8 +72,8 @@ def daily_routine(config_loc: str):
         # tdx_data.update_convertible_bond_minute() # 可转债分钟行情
 
     # compute data
-    # asd.ConstLimitStockFactorCompositor().update()
-    # asd.NegativeBookEquityListingCompositor().update()
+    asd.ConstLimitStockFactorCompositor().update()
+    asd.NegativeBookEquityListingCompositor().update()
     # asd.IndexUpdater().update()
     # asd.MarketSummaryCompositor().update() ### 要3天
     #

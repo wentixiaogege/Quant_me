@@ -3,16 +3,16 @@ import datetime as dt
 TRADING_DAYS_IN_YEAR = 244
 
 # exchanges
-STOCK_EXCHANGES = ['SSE', 'SZSE']
+STOCK_EXCHANGES = ['SSE', 'SZSE'] # SSE 表示上交所,SZSE 表示深交所
 FUTURE_EXCHANGES = ['CFFEX', 'DCE', 'CZCE', 'SHFE', 'INE']
 ALL_EXCHANGES = STOCK_EXCHANGES + FUTURE_EXCHANGES
 
-# indexes
-STOCK_INDEXES = {'上证指数': '000001.SH', '深证成指': '399001.SZ', '中小板指': '399005.SZ', '创业板指': '399006.SZ',
-                 '上证50': '000016.SH', '沪深300': '000300.SH', '中证500': '000905.SH'}
+# indexes 7个指数
+STOCK_INDEXES = {'上证指数': '000001.SH', '深证成指': '399001.SZ', '中小板指': '399005.SZ', '创业板指': '399006.SZ','上证50': '000016.SH', '沪深300': '000300.SH', '中证500': '000905.SH'}
+# 3个指数成分和权重，默认指数为 ['000016.SH', '399300.SH', '000905.SH'], 即50, 300, 500
 BOARD_INDEXES = ['000016.SH', '000300.SH', '000905.SH']
-STOCK_INDEX_ETFS = {'中小板': '159902.SZ', '创业板': '159915.SZ', '50ETF': '510050.SH', '300ETF': '510300.SH',
-                    '500ETF': '510500.SH'}
+# 5个ETF指数
+STOCK_INDEX_ETFS = {'中小板': '159902.SZ', '创业板': '159915.SZ', '50ETF': '510050.SH', '300ETF': '510300.SH','500ETF': '510500.SH'}
 
 # financial statements
 FINANCIAL_STATEMENTS_TYPE = ['资产负债表', '利润表', '现金流量表', '财务指标']
