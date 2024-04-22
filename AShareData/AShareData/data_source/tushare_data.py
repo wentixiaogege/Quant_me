@@ -68,8 +68,8 @@ class TushareData(DataSource):
         """Update calendar and ticker lists"""
         # # print('self.update_calendar()')
         # # self.update_calendar() # 上交所【交易日历】，删除重建
-        # # print('self.update_hk_calendar()')
-        # # self.update_hk_calendar() #【港股交易日历】，删除重建
+        # print('self.update_hk_calendar()')
+        # self.update_hk_calendar() #【港股交易日历】，删除重建
         # print('self.update_stock_list_date()')
         # self.update_stock_list_date() #
         # 【证券代码】 - 类型是（A股股票）
@@ -155,7 +155,14 @@ class TushareData(DataSource):
     def update_hk_calendar(self) -> None:
         """ 更新港交所交易日历 """
         table_name = '港股交易日历'
-        df = self._pro.hk_tradecal(is_open=1)
+        storage = []
+        end_dates = ['19850101', '19900101', '19950101', '20000101', '20050101', '20100101', '20150101', '20200101',None]
+        for end_date in end_dates:
+            print('ljj get_shibor debuging ' + str(end_date))
+            storage.append(self._pro.hk_tradecal(end_date=end_date,is_open=1))
+        df = pd.concat(storage)
+        # df = pro.hk_tradecal(start_date='20200101', end_date='20200708')
+        # df = self._pro.hk_tradecal(is_open=1)
         cal_date = df.cal_date
         cal_date = cal_date.sort_values()
         cal_date.name = '交易日期'
@@ -626,10 +633,16 @@ class TushareData(DataSource):
         renaming_dict = self._factor_param[table_name]['输出参数']
         start_date = self.db_interface.get_latest_timestamp(table_name, dt.date(1990, 12, 10)) + dt.timedelta(days=1)
         end_date = self.calendar.yesterday()
-
-        df = self._pro.suspend_d(start_date=date_utils.date_type2str(start_date),
-                                 end_date=date_utils.date_type2str(end_date),
-                                 suspend_type='S')
+        ### 总共有最大5000限制，需要分开，每分钟有600次限制要rateimit，需要修改一下jason
+        rate_limiter = RateLimiter(599, 60)
+        logging.getLogger(__name__).info(f'开始下载{table_name}.')
+        storage = []
+        for fetch_date in tqdm(pd.date_range(start=start_date,end=end_date)):
+            with rate_limiter:
+                temp = self._pro.suspend_d(trade_date=date_utils.date_type2str(fetch_date),
+                                         suspend_type='S')
+                storage.append(temp)
+        df = pd.concat(storage)
         output = df.loc[pd.isna(df.suspend_timing), ['ts_code', 'trade_date']]
         output['停牌类型'] = '停牌一天'
         output['停牌原因'] = ''

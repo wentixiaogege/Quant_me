@@ -6,3 +6,172 @@
          介绍：https://www.sohu.com/a/246782684_99992453
    聚宽（jointQuant）：试用版免费15个月，淘宝：付费版大概500一年；官方账号8000多一年；
    TDX（通达信）：https://gitee.com/better319/pytdx/
+
+
+
+     CREATE TABLE `自合成指数` (
+      `DateTime` date NOT NULL,
+      `ID` varchar(20) NOT NULL,
+      `收益率` double DEFAULT NULL,
+      PRIMARY KEY (`DateTime`,`ID`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+
+    pre_close   float   Y   昨收盘价(元)
+    open    float   Y   开盘价(元)
+    high    float   Y   最高价(元)
+    low float   Y   最低价(元)
+    close   float   Y   收盘价(元)
+    change  float   Y   涨跌(元)
+    pct_chg float   Y   涨跌幅(%)
+    vol float   Y   成交量(手)
+    amount
+
+
+
+    tushare_crawler.update_base_info()
+
+    ####### 股票名称和ID 能够唯一一一对应；
+
+    select * from 证券代码 where 证券类型='A股股票' # 5848
+
+    # 5848 能够对齐
+    select dd.*,b.证券名称 from (select * from 证券代码 where 证券类型='A股股票')dd left join (select a.* from (select * from 证券名称) a join (select ID,max(DateTime) as DateTime from 证券名称 group by ID) b on a.ID = b.ID and a.DateTime = b.DateTime)b on dd.ID = b.ID limit 100;
+
+
+    select * from 证券代码  # 148290
+     # 148290  能够对齐
+    select dd.*,b.证券名称 from (select * from 证券代码)dd left join (select a.* from (select * from 证券名称) a join (select ID,max(DateTime) as DateTime from 证券名称 group by ID) b on a.ID = b.ID and a.DateTime = b.DateTime)b on dd.ID = b.ID;
+
+
+    select * from 证券代码 where 证券类型='可转债' 1410
+    select distinct ID  from 证券代码 where 证券类型='可转债' 980
+
+    select dd.*,b.证券名称 from (select * from 证券代码 where 证券类型='可转债')dd left join (select a.* from (select * from 证券名称) a join (select ID,max(DateTime) as DateTime from 证券名称 group by ID) b on a.ID = b.ID and a.DateTime = b.DateTime)b on dd.ID = b.ID;
+
+
+    select distinct ID  from 证券代码 where 证券类型 like '%基金'; 19351
+
+    select count(distinct dd.ID)  from (select * from 证券代码 where 证券类型 like '%基金')dd left join (select a.* from (select * from 证券名称) a join (select ID,max(DateTime) as DateTime from 证券名称 group by ID) b on a.ID = b.ID and a.DateTime = b.DateTime)b on dd.ID = b.ID;  #19351
+
+    select * from 基金列表;19817 会多一些， 前面都因为datetime 是空祛除了
+
+
+    tushare_crawler.get_shibor() # 2006-10-08    | 2024-04-11
+
+
+    tushare_crawler.get_ipo_info() # 2008-01-16        | 2024-04-08   ### 4004
+
+            select min(上市日期),max(上市日期),min(上网发行日期),max(上网发行日期) from  IPO新股列表;
+            +-------------------+-------------------+-------------------------+-------------------------+
+            | min(上市日期)     | max(上市日期)     | min(上网发行日期)       | max(上网发行日期)       |
+            +-------------------+-------------------+-------------------------+-------------------------+
+            | 2008-01-16        | 2024-04-08        | 2008-01-03              | 2024-04-01              |
+            +-------------------+-------------------+-------------------------+-------------------------+
+            select * from 证券代码 where 证券类型='A股股票' # 5848 没变，只是更新了上市状态；
+
+
+
+    tushare_crawler.get_company_info()
+            select min(注册日期),max(注册日期),count(*) from 上市公司基本信息;
+            +-------------------+-------------------+----------+
+            | min(注册日期)     | max(注册日期)     | count(*) |
+            +-------------------+-------------------+----------+
+            | 1955-10-01        | 2020-10-14        |     5355 |
+            +-------------------+-------------------+----------+
+
+
+
+    tushare_crawler.update_hs_holding()   # 沪深港股通持股明细 1832 rows
+
+        select DateTime,count(distinct ID) from 沪深港股通持股明细 group by Datetime limit 10;
+            +------------+--------------------+
+            | DateTime   | count(distinct ID) |
+            +------------+--------------------+
+            | 2016-06-29 |                608 |
+            | 2016-06-30 |                671 |
+             .........................
+            | 2024-03-07 |               4075 |
+            | 2024-03-08 |               4076 |
+            | 2024-03-11 |               4076 |
+            | 2024-03-12 |               4076 |
+            | 2024-03-13 |               4076 |
+            | 2024-03-14 |               4076 |
+            | 2024-03-15 |               4076 |
+            | 2024-03-18 |               4079 |
+            | 2024-03-19 |               4078 |
+            | 2024-03-20 |               4078 |
+            | 2024-03-21 |               4078 |
+            | 2024-03-22 |               4078 |
+            | 2024-03-25 |               4078 |
+            +------------+--------------------+
+            1832 rows in set (9.77 sec)
+
+    tushare_crawler.update_dividend() # 分红送股
+            select min(DateTime),max(DateTime) from 分红送股;
+            +---------------+---------------+
+            | min(DateTime) | max(DateTime) |
+            +---------------+---------------+
+            | 1991-03-17    | 2024-03-08    |
+            +---------------+---------------+
+
+
+    tushare_crawler.update_index_daily() #指数日行情
+      select count(*) from stock1.指数日行情;
+        +----------+
+        | count(*) |
+        +----------+
+        |    29982 |
+        +----------+
+        1 row in set (0.01 sec)
+
+    tushare_crawler.update_hq_daily()
+      # 5张表 股票日行情+复权因子+总股本+流通股本+自由流通股本--- 使用tushare的日线 wind的没有权限
+       select DateTime, count(*) from stock1.股票日行情 group by DateTime;
+      insert into 股票日行情 select * from stock.股票日行情 where DateTime>'2008-01-04';
+
+      select DateTime, count(*) from stock1.复权因子 group by DateTime;
+      insert into 复权因子 select * from stock.复权因子 where DateTime>='2008-01-04';
+
+      select DateTime, count(*) from stock1.总股本 group by DateTime;
+      insert into 总股本 select * from stock.总股本 where DateTime>='2008-01-04';
+
+      select DateTime, count(*) from stock1.流通股本 group by DateTime;
+      insert into 流通股本 select * from stock.流通股本 where DateTime>='2008-01-04';
+
+      select DateTime, count(*) from stock1.自由流通股本 group by DateTime;
+      insert into 自由流通股本 select * from stock.自由流通股本 where DateTime>='2008-01-04';
+
+
+
+    tushare_crawler.update_pause_stock_info()# 股票停牌--- 使用tushare的日线 wind的没有权限
+
+        select min(DateTime),max(DateTime) from stock1.股票停牌;
+        +---------------+---------------+
+        | min(DateTime) | max(DateTime) |
+        +---------------+---------------+
+        | 1999-05-04    | 2024-04-19    |
+        +---------------+-----------
+
+
+    tushare_crawler.update_hk_stock_daily() # 港股日行情
+
+        select min(DateTime),max(DateTime) from stock1.港股日行情;
+           | 2024-03-27 |     1982 |
+            | 2024-03-28 |     1986 |
+            | 2024-04-02 |     2006 |
+            | 2024-04-03 |     1900 |
+            | 2024-04-05 |     1906 |
+            | 2024-04-08 |     1952 |
+            | 2024-04-09 |     1977 |
+            | 2024-04-10 |     1973 |
+            | 2024-04-11 |     1938 |
+            | 2024-04-12 |     1895 |
+            | 2024-04-15 |     1899 |
+            | 2024-04-16 |     1942 |
+            | 2024-04-17 |     1885 |
+            | 2024-04-18 |     1913 |
+            | 2024-04-19 |     1859 |
+            +------------+----------+
+            8466 rows in set (33.59 sec)
+
