@@ -10,6 +10,7 @@ from ..data_source.data_source import DataSource
 from ..database_interface import DBInterface
 from ..factor import CompactFactor
 from ..tickers import FundTickers, StockTickerSelector
+from .. import date_utils
 
 
 class FactorCompositor(DataSource):
@@ -23,6 +24,7 @@ class FactorCompositor(DataSource):
         """
         super().__init__(db_interface)
         self.data_reader = AShareDataReader(db_interface)
+        self.calendar = date_utils.SHSZTradingCalendar(self.db_interface)
 
     def update(self):
         """更新数据"""
@@ -37,8 +39,7 @@ class IndexCompositor(FactorCompositor):
         self.policy = index_composition_policy
         self.weight = None
         if index_composition_policy.unit_base:
-            self.weight = (CompactFactor(index_composition_policy.unit_base, self.db_interface)
-                           * self.data_reader.stock_close).weight()
+            self.weight = (CompactFactor(index_composition_policy.unit_base, self.db_interface) * self.data_reader.stock_close).weight()
         self.stock_ticker_selector = StockTickerSelector(self.policy.stock_selection_policy, self.db_interface)
 
     def update(self):
@@ -79,7 +80,8 @@ class IndexUpdater(object):
         records = utils.load_excel('自编指数配置.xlsx', config_loc)
         self.policies = {}
         for record in records:
-            print(record)
+        # for record in records[-1:]:
+            # print(record)
             self.policies[record['name']] = utils.StockIndexCompositionPolicy.from_dict(record)
 
     def update(self):
@@ -94,7 +96,6 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
     def __init__(self, db_interface: DBInterface = None):
         """
         标识一字涨跌停板
-
         判断方法: 取最高价和最低价一致 且 当日未停牌
          - 若价格高于昨前复权价, 则视为涨停一字板
          - 若价格低于昨前复权价, 则视为跌停一字板
@@ -106,12 +107,11 @@ class ConstLimitStockFactorCompositor(FactorCompositor):
         stock_selection_policy = utils.StockSelectionPolicy(select_pause=True)
         self.paused_stock_selector = StockTickerSelector(stock_selection_policy, db_interface)
 
+
     def update(self):
-        price_table_name = '股票日行情'#日线行情
-        # price_table_name = '日线行情'
-        # start_date = self.db_interface.get_latest_timestamp(self.table_name, dt.date(1999, 5, 4))
-        start_date = self.db_interface.get_latest_timestamp(self.table_name, dt.date(2008, 1, 3))
-        end_date = self.db_interface.get_latest_timestamp(price_table_name, dt.date(1990, 12, 10))
+        price_table_name = '股票日行情'# 开始日期
+        start_date = self.db_interface.get_latest_timestamp(self.table_name, dt.date(2006, 1, 5))
+        end_date = self.db_interface.get_latest_timestamp(price_table_name, dt.date(2006, 1, 5))
         print('ljj debugging ',start_date,end_date)
         pre_data = self.db_interface.read_table(price_table_name, ['最高价', '最低价'], dates=start_date)
         dates = self.calendar.select_dates(start_date, end_date)
@@ -147,7 +147,6 @@ class FundAdjFactorCompositor(FactorCompositor):
     def __init__(self, db_interface: DBInterface = None):
         """
         计算基金的复权因子
-
         :param db_interface: DBInterface
         """
         super().__init__(db_interface)
@@ -219,7 +218,7 @@ class NegativeBookEquityListingCompositor(FactorCompositor):
                 t2 = t[np.concatenate(([True], t.values[:-1] != t.values[1:]))]
                 if any(t2):
                     storage.append(t2)
-        if len(storage) >0: ####  无负债就不高啊
+        if len(storage) >0: ####  无负债就不写入了
             ret = pd.concat(storage)
             ret.name = '负净资产股票'
             self.db_interface.purge_table(self.table_name)

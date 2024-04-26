@@ -770,7 +770,7 @@ class TushareData(DataSource):
     def update_financial_data(self, date: dt.datetime = None):
         table_name = '财报披露计划'
         desc = self._factor_param[table_name]['输出参数']
-        ref_table = '合并资产负债表'
+        ref_table = '合并资产负债表' ### 找了一个参考的
         db_data = self.db_interface.read_table(ref_table, '期末总股本')
         latest = db_data.groupby('ID').tail(1).reset_index().loc[:, ['DateTime', 'ID']].rename({'ID': 'ts_code'},axis=1)
         update_tickers = set(self.stock_tickers.all_ticker()) - set(latest.ts_code.tolist())
@@ -814,6 +814,25 @@ class TushareData(DataSource):
         self.db_interface.delete_id_records(data_category, ticker)
         self.db_interface.insert_df(df, data_category)
         return df
+    #
+    # def update_industry(self) -> None:
+    #     """更新行业信息"""
+    #     for provider in constants.INDUSTRY_DATA_PROVIDER:
+    #         self._update_industry(provider)
+    #
+    # def _update_industry(self, provider: str) -> None:
+    #     """更新行业信息
+    #     :param provider: 行业分类提供商
+    #     """
+    #     table_name = f'{provider}行业'
+    #     print(table_name)
+    #     if '申万一级' in table_name:
+    #         df = self._pro.index_classify(level='L1', src='SW2021')
+    #     elif '申万' in table_name:
+    #         df = self._pro.index_classify(level='L3', src='SW2021')
+    #     else:
+    #         pass
+
 
     def get_hs_constitute(self) -> None:
         """ 沪深股通成分股进出记录. 月末更新. 获取沪股通、深股通成分数据"""

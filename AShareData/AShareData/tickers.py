@@ -336,7 +336,7 @@ class StockTickerSelector(TickerSelector):
             ids = set(self.stock_ticker.new_ticker(start_date=start_date, end_date=end_date)) & ids
 
         if self.industry_info and self.policy.industry:
-            ids = ids & set(self.industry_info.list_constitutes(date=date, industry=self.policy.industry))
+            ids = ids & set(self.industry_info.list_constitutes(date=dt.datetime(2024,4,25), industry=self.policy.industry))
         if self.policy.ignore_const_limit:
             ids = ids - set(self.const_limit_selector.get_data(date))
 

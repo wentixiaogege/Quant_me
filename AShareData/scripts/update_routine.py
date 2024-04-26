@@ -27,12 +27,19 @@ def daily_routine(config_loc: str):
         print('update_hk_stock_daily')
         # tushare_crawler.update_hk_stock_daily() # 港股日行情
         # 更新基金列表--- 使用tushare的 wind的没有权限
-        print('update_fund_list_date')
+        print('update_financial_data')
+        # tushare_crawler.update_financial_data() ### 7张表
+        # 合并资产负债表,财务指标
+        # 母公司资产负债表, 母公司现金流量表 和 母公司利润表
+        # 合并资产负债表, 合并现金流量表 和 合并利润表
+        print('update_industry') ###### 使用爬虫吧，目前拿到的不全
+        # tushare_crawler.update_industry() # ['中信', '申万', '中证', 'Wind'] 行业表 ---》 目前只有wind有 ？？？？？
+
+        print('update_fund_list_date') ###
         # tushare_crawler.update_fund_list_date() #### update_base_info 里面有了
         # tushare_crawler.update_fund_portfolio() ### 公募基金持仓数据
         # tushare_crawler.update_fund_daily()
         # tushare_crawler.update_fund_dividend()
-        tushare_crawler.update_financial_data() # 合并资产负债表
 
         # 可转债日行情--- 使用tushare的日线 wind的没有权限
         print('update_convertible_bond_daily_data')
@@ -71,10 +78,14 @@ def daily_routine(config_loc: str):
         # tdx_data.update_stock_minute() #### 免费只能用 3个月左右的数据；，这里还依赖了JQ的集合竞价数据，做了一些调整；
         # tdx_data.update_convertible_bond_minute() # 可转债分钟行情
 
-    # compute data
-    # asd.ConstLimitStockFactorCompositor().update()
-    # asd.NegativeBookEquityListingCompositor().update()
-    # asd.IndexUpdater().update()
+    # 计算指标相关
+    # 标记是否 一字涨跌停，并写入【一字涨跌停】
+    # asd.ConstLimitStockFactorCompositor().update() ###  20 min
+    # 标识负净资产股票 并写入【负净资产股票】
+    # asd.NegativeBookEquityListingCompositor().update() ### 删除然后重建
+    # 指数更新器 ``./data/自编指数配置.xlsx`` ### 这里选了108个指标，一个指标4小时
+    asd.IndexUpdater().update() ## 写入表 【自合成指数】
+    #
     # asd.MarketSummaryCompositor().update() ### 要3天
     #
     # # model data
